@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Alchemy Idle: Discovery</title>
+    <!-- Подключаем скрипт Telegram (ОБЯЗАТЕЛЬНО ДЛЯ WEB APP) -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --panel-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --accent-color: #00bfff;
+            --success-color: #4CAF50;
+            --danger-color: #f44336;
+            --mana-color: #9d4edd;
+            --cauldron-bg: #2d2a32;
+        }
+
+        body {
+            margin: 0; padding: 10px; background-color: var(--bg-color); color: var(--text-color);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            user-select: none; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box;
+        }
+
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 20px; background: var(--panel-bg); border: 1px solid #333;
+            border-radius: 8px; margin-bottom: 10px; flex-shrink: 0;
+        }
+
+        .stat-box { font-size: 18px; font-weight: bold; }
+        .mana { color: var(--mana-color); font-size: 24px; text-shadow: 0 0 5px var(--mana-color); }
+
+        .storage-bar-container {
+            width: 300px; height: 20px; background: #000; border-radius: 10px;
+            border: 1px solid #444; overflow: hidden; position: relative;
+        }
+        .storage-bar-fill { height: 100%; background: var(--accent-color); width: 0%; transition: width 0.3s; }
+        .storage-text {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            text-align: center; font-size: 14px; line-height: 20px; color: white; text-shadow: 1px 1px 2px black;
+        }
+
+        #game-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; flex-grow: 1; overflow: hidden; }
+        @media (max-width: 900px) { #game-grid { grid-template-columns: 1fr; overflow-y: auto; } }
+
+        .panel { background: var(--panel-bg); border: 1px solid #333; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; overflow-y: auto; }
+        .panel-title { text-align: center; font-size: 20px; margin-top: 0; padding-bottom: 10px; border-bottom: 1px solid #333; margin-bottom: 15px; }
+
+        button { background: #333; color: var(--text-color); border: 1px solid #555; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 14px; transition: 0.1s; }
+        button:hover:not(:disabled) { background: #444; }
+        button:active:not(:disabled) { transform: scale(0.95); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .card { background: #2a2a2a; padding: 10px; border-radius: 5px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333; }
+        .btn-gather { background: #2E8B57; font-weight: bold; }
+        .btn-sell { background: #8b0000; font-size: 12px; }
+        .btn-add { background: #4682B4; font-size: 12px; }
+
+        #cauldron-zone { background: var(--cauldron-bg); border: 2px dashed #9d4edd; border-radius: 8px; padding: 15px; margin-top: auto; text-align: center; }
+        #cauldron-items { min-height: 40px; margin-bottom: 10px; font-size: 20px; letter-spacing: 5px; }
+        .cauldron-controls { display: flex; gap: 10px; }
+        .cauldron-controls button { flex: 1; font-weight: bold; }
+        .btn-brew { background: #9d4edd; font-size: 16px; border-color: #6a0dad; }
+        
+        .recipe-card { flex-direction: column; gap: 10px; align-items: stretch; }
+        .recipe-reqs { font-size: 12px; color: #aaa; text-align: center; }
+        .recipe-actions { display: flex; gap: 10px; }
+        .btn-auto { background: #4b0082 !important; }
+
+        #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        .toast { background: rgba(0,0,0,0.9); border: 1px solid var(--accent-color); padding: 10px 20px; border-radius: 20px; font-weight: bold; animation: slideDown 0.3s, fadeOut 0.5s 2.5s forwards; }
+        @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes fadeOut { to { opacity: 0; } }
+        .secret-text { text-align: center; color: #666; font-style: italic; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <div id="toast-container"></div>
+
+    <header>
+        <div class="stat-box" onclick="resetSave()" style="cursor: pointer;" title="Кликните чтобы сбросить прогресс">Мана: <span id="manaDisplay" class="mana">0 🔮</span></div>
+        <div class="storage-bar-container">
+            <div id="storageFill" class="storage-bar-fill"></div>
+            <div id="storageText" class="storage-text">Склад: 0 / 50</div>
+        </div>
+    </header>
+
+    <div id="game-grid">
+        <div class="panel">
+            <h2 class="panel-title">Сбор Сырья</h2>
+            <div class="card"><div><span>💧</span> Вода</div><button class="btn-gather" onclick="gather('water')">Собрать</button></div>
+            <div class="card"><div><span>🪨</span> Земля</div><button class="btn-gather" onclick="gather('dirt')">Собрать</button></div>
+            <div class="card"><div><span>🌰</span> Семечко</div><button class="btn-gather" onclick="gather('seed')">Собрать</button></div>
+
+            <div style="margin-top: auto; background: #2a2a2a; padding: 15px; border-radius: 8px; text-align: center;">
+                <h3>Улучшение склада</h3>
+                <p style="font-size: 12px; color: #aaa;">Увеличивает вместимость на +25</p>
+                <button id="btnUpgradeStorage" onclick="upgradeStorage()" style="width: 100%; background: #4CAF50; font-weight: bold;">Купить за 50 🔮</button>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2 class="panel-title">Склад</h2>
+            <div id="inventoryContainer" style="flex-grow: 1; overflow-y: auto; margin-bottom: 15px;"></div>
+
+            <div id="cauldron-zone">
+                <h3 style="margin-top: 0;">🧪 Алхимический Котел</h3>
+                <p style="font-size: 12px; color: #aaa; margin: 5px 0;">Кладите сюда предметы, чтобы открывать рецепты</p>
+                <div id="cauldron-items">Пусто</div>
+                <div class="cauldron-controls">
+                    <button onclick="clearCauldron()" style="background: #555;">Очистить</button>
+                    <button class="btn-brew" onclick="brew()">Сварить!</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2 class="panel-title">Открытые Рецепты</h2>
+            <div id="recipesContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        // ИНИЦИАЛИЗАЦИЯ TELEGRAM
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // На весь экран
+        tg.ready();  // Сообщаем телеграму, что мы загрузились
+
+        // ВАЖНО: ЗАМЕНИТЕ НА АДРЕС ВАШЕГО СЕРВЕРА С ПИТОНОМ!
+        const API_URL = "http://127.0.0.1:5000"; 
+
+        const ITEMS = {
+            'water': { name: 'Вода', icon: '💧', price: 1 },
+            'dirt': { name: 'Земля', icon: '🪨', price: 1 },
+            'seed': { name: 'Семечко', icon: '🌰', price: 2 },
+            'sprout': { name: 'Росток', icon: '🌱', price: 8 },
+            'root': { name: 'Корень', icon: '🥕', price: 10 },
+            'clay': { name: 'Глина', icon: '🏺', price: 6 },
+            'flask': { name: 'Пустая Колба', icon: '🫙', price: 25 },
+            'flower': { name: 'Маг. Цветок', icon: '🌸', price: 30 },
+            'hp_potion': { name: 'Зелье Жизни', icon: '❤️', price: 150 },
+            'mana_potion': { name: 'Зелье Маны', icon: '💙', price: 200 }
+        };
+
+        const RECIPES = [
+            { id: 'sprout', result: 'sprout', ingredients: { 'water': 1, 'seed': 1 }, autoCost: 50 },
+            { id: 'root', result: 'root', ingredients: { 'dirt': 1, 'seed': 1 }, autoCost: 60 },
+            { id: 'clay', result: 'clay', ingredients: { 'water': 2, 'dirt': 1 }, autoCost: 40 },
+            { id: 'flower', result: 'flower', ingredients: { 'sprout': 1, 'dirt': 1 }, autoCost: 150 },
+            { id: 'flask', result: 'flask', ingredients: { 'clay': 1, 'root': 1 }, autoCost: 120 },
+            { id: 'hp_potion', result: 'hp_potion', ingredients: { 'flask': 1, 'flower': 1, 'water': 1 }, autoCost: 500 },
+            { id: 'mana_potion', result: 'mana_potion', ingredients: { 'flask': 1, 'sprout': 1, 'water': 2 }, autoCost: 600 }
+        ];
+
+        let state = { mana: 0, storageMax: 50, storageCost: 50, inventory: {}, discoveredRecipes: [], autoCrafters: {} };
+        let cauldron = {};
+
+        // === НОВАЯ СИСТЕМА СОХРАНЕНИЙ НА СЕРВЕР ===
+        async function saveGame() {
+            localStorage.setItem('alchemySave', JSON.stringify(state)); // Резерв в браузере
+
+            // Получаем ID пользователя из Telegram
+            const userId = tg.initDataUnsafe?.user?.id;
+            if (!userId) return; // Если открыто в браузере, а не в ТГ - просто сохраняем локально
+
+            try {
+                await fetch(`${API_URL}/api/save`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, save_data: state })
+                });
+            } catch (err) { console.log("Сервер не ответил, сохранено локально."); }
+        }
+
+        async function loadGame() {
+            const userId = tg.initDataUnsafe?.user?.id;
+            let loadedFromServer = false;
+
+            if (userId) {
+                try {
+                    let response = await fetch(`${API_URL}/api/load?user_id=${userId}`);
+                    if (response.ok) {
+                        let serverData = await response.json();
+                        if (serverData.status === 'success' && serverData.data) {
+                            state = serverData.data;
+                            loadedFromServer = true;
+                        }
+                    }
+                } catch (e) { console.log("Не удалось скачать сейв с сервера"); }
+            }
+
+            // Если с сервера не скачалось (первый вход или ошибка), грузим из кэша
+            if (!loadedFromServer) {
+                let saved = localStorage.getItem('alchemySave');
+                if (saved) state = JSON.parse(saved);
+            }
+
+            // Проверка структуры
+            if(!state.discoveredRecipes) state.discoveredRecipes = [];
+            if(!state.autoCrafters) state.autoCrafters = {};
+            if(!state.inventory) state.inventory = {};
+            
+            updateUI();
+        }
+
+        function resetSave() {
+            if(confirm("Сбросить прогресс?")) {
+                localStorage.removeItem('alchemySave');
+                state = { mana: 0, storageMax: 50, storageCost: 50, inventory: {}, discoveredRecipes: [], autoCrafters: {} };
+                saveGame();
+                updateUI();
+            }
+        }
+
+        function showToast(text, color = "var(--accent-color)") {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast'; toast.style.borderColor = color; toast.style.color = color;
+            toast.innerText = text; container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        function getUsedStorage() { let total = 0; for (let item in state.inventory) total += state.inventory[item]; return total; }
+
+        function gather(itemId) {
+            if (getUsedStorage() < state.storageMax) {
+                state.inventory[itemId] = (state.inventory[itemId] || 0) + 1;
+                saveGame(); updateUI();
+            } else showToast("Склад переполнен!", "var(--danger-color)");
+        }
+
+        function sellItem(itemId) {
+            let amount = state.inventory[itemId];
+            if (amount > 0) {
+                state.mana += ITEMS[itemId].price * amount;
+                state.inventory[itemId] = 0;
+                saveGame(); updateUI();
+            }
+        }
+
+        function addToCauldron(itemId) {
+            if (state.inventory[itemId] > 0) { state.inventory[itemId]--; cauldron[itemId] = (cauldron[itemId] || 0) + 1; updateUI(); }
+        }
+
+        function clearCauldron() {
+            for (let item in cauldron) state.inventory[item] = (state.inventory[item] || 0) + cauldron[item];
+            cauldron = {}; updateUI();
+        }
+
+        function brew() {
+            if (Object.keys(cauldron).length === 0) return;
+            let matchedRecipe = null;
+            for (let r of RECIPES) {
+                let isMatch = true; let cKeys = Object.keys(cauldron); let rKeys = Object.keys(r.ingredients);
+                if (cKeys.length !== rKeys.length) isMatch = false;
+                else { for (let key of cKeys) { if (cauldron[key] !== r.ingredients[key]) { isMatch = false; break; } } }
+                if (isMatch) { matchedRecipe = r; break; }
+            }
+
+            if (matchedRecipe) {
+                state.inventory[matchedRecipe.result] = (state.inventory[matchedRecipe.result] || 0) + 1;
+                cauldron = {}; 
+                if (!state.discoveredRecipes.includes(matchedRecipe.id)) {
+                    state.discoveredRecipes.push(matchedRecipe.id);
+                    showToast(`✨ НОВЫЙ РЕЦЕПТ: ${ITEMS[matchedRecipe.result].name}!`, "var(--success-color)");
+                } else showToast(`Сварено: ${ITEMS[matchedRecipe.result].name}`);
+            } else {
+                clearCauldron(); showToast("Бурда... Ингредиенты возвращены.", "var(--danger-color)");
+            }
+            saveGame(); updateUI();
+        }
+
+        function craft(recipeId) {
+            const recipe = RECIPES.find(r => r.id === recipeId);
+            for (let req in recipe.ingredients) if ((state.inventory[req] || 0) < recipe.ingredients[req]) return;
+            let itemsRemoved = 0; for (let req in recipe.ingredients) itemsRemoved += recipe.ingredients[req];
+            if (getUsedStorage() - itemsRemoved + 1 > state.storageMax) return;
+            for (let req in recipe.ingredients) state.inventory[req] -= recipe.ingredients[req];
+            state.inventory[recipe.result] = (state.inventory[recipe.result] || 0) + 1;
+            saveGame(); updateUI();
+        }
+
+        function buyAutoCrafter(recipeId) {
+            const recipe = RECIPES.find(r => r.id === recipeId);
+            if (state.mana >= recipe.autoCost && !state.autoCrafters[recipeId]) {
+                state.mana -= recipe.autoCost; state.autoCrafters[recipeId] = true;
+                saveGame(); updateUI();
+            }
+        }
+
+        function upgradeStorage() {
+            if (state.mana >= state.storageCost) {
+                state.mana -= state.storageCost; state.storageMax += 25;
+                state.storageCost = Math.floor(state.storageCost * 1.5);
+                saveGame(); updateUI();
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('manaDisplay').innerText = `${state.mana} 🔮`;
+            let used = getUsedStorage();
+            document.getElementById('storageText').innerText = `Склад: ${used} / ${state.storageMax}`;
+            document.getElementById('storageFill').style.width = `${(used / state.storageMax) * 100}%`;
+            document.getElementById('storageFill').style.background = used >= state.storageMax ? 'var(--danger-color)' : 'var(--accent-color)';
+            let btnStorage = document.getElementById('btnUpgradeStorage');
+            btnStorage.innerText = `Купить за ${state.storageCost} 🔮`; btnStorage.disabled = state.mana < state.storageCost;
+
+            let invHTML = '';
+            for (let itemId in state.inventory) {
+                let amount = state.inventory[itemId];
+                if (amount > 0) {
+                    let item = ITEMS[itemId];
+                    invHTML += `<div class="card" style="padding: 5px 10px;">
+                                <div>${item.icon} <b>${item.name}</b>: ${amount}</div>
+                                <div style="display:flex; gap:5px;">
+                                    <button class="btn-add" onclick="addToCauldron('${itemId}')">+ В котел</button>
+                                    <button class="btn-sell" onclick="sellItem('${itemId}')">Продать (+${item.price * amount})</button>
+                                </div></div>`;
+                }
+            }
+            document.getElementById('inventoryContainer').innerHTML = invHTML || '<div style="color: #666; text-align: center;">Склад пуст</div>';
+
+            let cauldronHTML = '';
+            for(let cItem in cauldron) for(let i=0; i<cauldron[cItem]; i++) cauldronHTML += ITEMS[cItem].icon + ' ';
+            document.getElementById('cauldron-items').innerHTML = cauldronHTML || '<span style="color:#666">Пусто</span>';
+
+            let recipesHTML = '';
+            if (state.discoveredRecipes.length === 0) recipesHTML = '<div class="secret-text">Экспериментируйте в котле, чтобы открыть рецепты!</div>';
+            else {
+                RECIPES.forEach(recipe => {
+                    if (state.discoveredRecipes.includes(recipe.id)) {
+                        let resItem = ITEMS[recipe.result];
+                        let reqStr = []; let canCraft = true;
+                        for (let reqItem in recipe.ingredients) {
+                            let reqAmount = recipe.ingredients[reqItem]; let currentAmount = state.inventory[reqItem] || 0;
+                            let color = currentAmount >= reqAmount ? 'var(--success-color)' : 'var(--danger-color)';
+                            reqStr.push(`<span style="color:${color}">${ITEMS[reqItem].icon} ${currentAmount}/${reqAmount}</span>`);
+                            if (currentAmount < reqAmount) canCraft = false;
+                        }
+                        let autoBtnHTML = state.autoCrafters[recipe.id] 
+                            ? `<button disabled class="btn-auto">Авто ✅</button>`
+                            : `<button class="btn-auto" onclick="buyAutoCrafter('${recipe.id}')" ${state.mana < recipe.autoCost ? 'disabled' : ''}>Авто (${recipe.autoCost}🔮)</button>`;
+                        recipesHTML += `<div class="card recipe-card">
+                                        <div style="font-weight: bold; font-size: 16px;">${resItem.icon} ${resItem.name}</div>
+                                        <div class="recipe-reqs">${reqStr.join(' + ')}</div>
+                                        <div class="recipe-actions">
+                                            <button style="flex:2; background:#2E8B57;" onclick="craft('${recipe.id}')" ${!canCraft ? 'disabled' : ''}>Создать</button>
+                                            ${autoBtnHTML}
+                                        </div></div>`;
+                    }
+                });
+            }
+            document.getElementById('recipesContainer').innerHTML = recipesHTML;
+        }
+
+        setInterval(() => {
+            let stateChanged = false;
+            RECIPES.forEach(recipe => {
+                if (state.autoCrafters[recipe.id] && state.discoveredRecipes.includes(recipe.id)) {
+                    let canCraft = true;
+                    for (let req in recipe.ingredients) if ((state.inventory[req] || 0) < recipe.ingredients[req]) canCraft = false;
+                    if (canCraft) {
+                        let itemsRemoved = 0; for (let req in recipe.ingredients) itemsRemoved += recipe.ingredients[req];
+                        if (getUsedStorage() - itemsRemoved + 1 <= state.storageMax) {
+                            for (let req in recipe.ingredients) state.inventory[req] -= recipe.ingredients[req];
+                            state.inventory[recipe.result] = (state.inventory[recipe.result] || 0) + 1;
+                            stateChanged = true;
+                        }
+                    }
+                }
+            });
+            if (stateChanged) { saveGame(); updateUI(); }
+        }, 1000);
+
+        // Старт игры
+        loadGame();
+    </script>
+</body>
+</html>
