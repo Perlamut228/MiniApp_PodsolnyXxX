@@ -8,24 +8,40 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <div id="loading-overlay"><div class="spinner"></div><h3 style="color: var(--accent);">Синхронизация...</h3></div>
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <h3 style="color: var(--accent);">Синхронизация...</h3>
+    </div>
+    
     <div id="toast-container"></div>
 
     <div id="app">
         <aside id="sidebar">
             <div class="profile-info profile-box">
-                <div class="avatar">🤖</div>
-                <div class="username">Игрок</div>
+                <div class="avatar" id="ui-avatar">🤖</div>
+                <div class="username" id="ui-username">Игрок</div>
+                <div class="user-id" id="ui-userid" style="font-size: 12px; color: var(--text-muted);">ID: 0000000</div>
             </div>
+            
             <div class="resources-box">
                 <div class="res-item res-sun"><span>🌻 Баланс</span> <span id="ui-sun">...</span></div>
                 <div class="res-item res-dia"><span>💎 Алмазы</span> <span id="ui-dia">...</span></div>
             </div>
+            
             <nav class="nav-menu">
                 <button class="nav-btn active" onclick="App.switchTab('farm')" data-tab="farm"><span>🏡</span> Сад</button>
-				<button class="nav-btn" onclick="App.switchTab('mine')" data-tab="mine"><span>🤫</span> Шахта</button>
-                </nav>
+                <button class="nav-btn" onclick="App.switchTab('mine')" data-tab="mine"><span>🤫</span> Шахта</button>
+                <button class="nav-btn" onclick="App.switchTab('inventory')" data-tab="inventory"><span>🎒</span> Инвентарь</button>
+                <button class="nav-btn" onclick="App.switchTab('craft')" data-tab="craft"><span>🛠</span> Крафт</button>
+                <button class="nav-btn" onclick="App.switchTab('shop')" data-tab="shop"><span>🛒</span> Магазин</button>
+                <button class="nav-btn" onclick="App.switchTab('merchant')" data-tab="merchant"><span>⛺️</span> Торговец</button>
+                <button class="nav-btn" onclick="App.switchTab('battlepass')" data-tab="battlepass"><span>🎟</span> Батлпасс</button>
+                
+                <div style="flex-grow: 1;"></div>
+                <button class="nav-btn" onclick="App.switchTab('settings')" data-tab="settings" style="border-top: 1px solid var(--border); border-radius: 0;"><span>⚙️</span> Настройки</button>
+            </nav>
         </aside>
+
         <div id="content-area">
             <main id="main-content"></main>
         </div>
@@ -34,7 +50,7 @@
     <script src="js/state.js"></script>
     <script src="js/api.js"></script>
     <script src="js/modules/farm.js"></script>
-    <script src="js/modules/mine.js"></script> <!-- ДОБАВИТЬ ЭТУ СТРОКУ -->
-    <script src="js/engine.js"></script>
+    <script src="js/modules/mine.js"></script>
+    <script src="js/modules/settings.js"></script> <script src="js/engine.js"></script>
 </body>
 </html>

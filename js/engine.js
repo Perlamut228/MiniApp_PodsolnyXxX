@@ -1,17 +1,34 @@
-const Modules = {
-    farm: FarmModule,
-    mine: MineModule  // <-- ДОБАВИТЬ ЭТУ СТРОКУ
+// Заглушка для будущих модулей (чтобы игра не ломалась при нажатии)
+const PlaceholderModule = {
+    render() { return `<div class="card" style="text-align:center; padding:50px; color:var(--text-muted);">В разработке... 🛠</div>`; }
 };
 
-// Локальные данные, которые сбрасываются при закрытии игры
-const StateLocal = {
-    uncollected_suns: 0 
+const Modules = {
+    farm: FarmModule,
+    mine: MineModule,
+    settings: SettingsModule,
+    // Заглушки на будущее:
+    inventory: PlaceholderModule,
+    craft: PlaceholderModule,
+    shop: PlaceholderModule,
+    merchant: PlaceholderModule,
+    battlepass: PlaceholderModule
 };
+
+const StateLocal = { uncollected_suns: 0 };
 
 const App = {
     currentTab: 'farm',
     
     async init() {
+        // 1. Загружаем визуальные настройки из кэша (если они есть)
+        const savedSettings = localStorage.getItem('scrapAppSettings');
+        if (savedSettings) State.settings = JSON.parse(savedSettings);
+        
+        this.applyLayout();
+        this.setupProfile(); // <-- Тянем данные из ТГ!
+
+        // 2. Загружаем данные бота
         await API.load();
         
         document.getElementById('loading-overlay').style.opacity = '0';
@@ -22,16 +39,43 @@ const App = {
         this.updateUI();
         
         setInterval(() => this.gameLoop(), 1000);
-        // Резервное автосохранение
         setInterval(() => {
             if (needsServerSync && isGameReady) { API.save(); needsServerSync = false; }
         }, 10000);
     },
 
+    // Функция связи с профилем Telegram
+    setupProfile() {
+        const tg = window.Telegram.WebApp;
+        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            const u = tg.initDataUnsafe.user;
+            
+            document.getElementById('ui-username').innerText = u.first_name || "Игрок";
+            document.getElementById('ui-userid').innerText = "ID: " + u.id;
+            
+            if (u.photo_url) {
+                // Если у юзера есть аватарка, ставим её
+                document.getElementById('ui-avatar').innerHTML = `<img src="${u.photo_url}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+            } else {
+                // Если нет (скрыта настройками приватности), ставим первую букву имени
+                document.getElementById('ui-avatar').innerHTML = `<b style="color:#000;">${(u.first_name || "U")[0]}</b>`;
+                document.getElementById('ui-avatar').style.background = "var(--accent)";
+            }
+        }
+    },
+
+    // Применение мобильного/ПК дизайна
+    applyLayout() {
+        if (State.settings.mobileLayout) {
+            document.body.classList.add('mobile-mode');
+        } else {
+            document.body.classList.remove('mobile-mode');
+        }
+    },
+
     saveLocal() {
         needsServerSync = true;
         this.updateUI();
-        // ВАЖНО: Моментально отправляем на сервер при любом действии!
         API.save(); 
     },
 
@@ -44,7 +88,9 @@ const App = {
     switchTab(tabName) {
         this.currentTab = tabName;
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        document.querySelector(`.nav-btn[data-tab="${tabName}"]`).classList.add('active');
+        const btn = document.querySelector(`.nav-btn[data-tab="${tabName}"]`);
+        if (btn) btn.classList.add('active');
+        
         document.getElementById('main-content').innerHTML = Modules[tabName].render();
     },
 
@@ -57,19 +103,14 @@ const App = {
     },
 
     gameLoop() {
-        // Останавливаем цикл только если игра еще не загрузилась с сервера
-        if (!isGameReady) return; 
+        if (!isGameReady) return;
         
-        // --- Логика Сада ---
         if (State.player.planted_seeds > 0) {
             StateLocal.uncollected_suns += (State.player.planted_seeds * 0.05);
             const earnEl = document.getElementById('farm-earning');
-            if (earnEl) {
-                earnEl.innerText = StateLocal.uncollected_suns.toFixed(2);
-            }
+            if (earnEl) earnEl.innerText = StateLocal.uncollected_suns.toFixed(2);
         }
 
-        // --- Логика Шахты ---
         if (this.currentTab === 'mine') {
             Modules.mine.updateTimer();
         }
