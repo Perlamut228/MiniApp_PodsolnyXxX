@@ -1,5 +1,6 @@
 const Modules = {
-    farm: FarmModule
+    farm: FarmModule,
+    mine: MineModule  // <-- ДОБАВИТЬ ЭТУ СТРОКУ
 };
 
 // Локальные данные, которые сбрасываются при закрытии игры
@@ -56,15 +57,21 @@ const App = {
     },
 
     gameLoop() {
-        if (!isGameReady || State.player.planted_seeds <= 0) return;
+        // Останавливаем цикл только если игра еще не загрузилась с сервера
+        if (!isGameReady) return; 
         
-        // Копим подсолнухи в накопитель урожая
-        StateLocal.uncollected_suns += (State.player.planted_seeds * 0.05);
+        // --- Логика Сада ---
+        if (State.player.planted_seeds > 0) {
+            StateLocal.uncollected_suns += (State.player.planted_seeds * 0.05);
+            const earnEl = document.getElementById('farm-earning');
+            if (earnEl) {
+                earnEl.innerText = StateLocal.uncollected_suns.toFixed(2);
+            }
+        }
 
-        // Обновляем циферку на экране Сада
-        const earnEl = document.getElementById('farm-earning');
-        if (earnEl) {
-            earnEl.innerText = StateLocal.uncollected_suns.toFixed(2);
+        // --- Логика Шахты ---
+        if (this.currentTab === 'mine') {
+            Modules.mine.updateTimer();
         }
     }
 };
