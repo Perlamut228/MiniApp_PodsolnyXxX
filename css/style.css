@@ -1,0 +1,39 @@
+:root {
+    --bg-dark: #0f0f13; --bg-panel: #1c1c24; --bg-card: #252530;
+    --text-main: #ffffff; --text-muted: #8b8b99;
+    --accent: #ff9800; --accent-hover: #e68900;
+    --mana: #9d4edd; --dia: #00e5ff;
+    --border: #333344; --danger: #ff4757; --success: #2ed573;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+body { background-color: var(--bg-dark); color: var(--text-main); overflow: hidden; user-select: none; }
+
+#app { display: flex; height: 100vh; width: 100vw; transition: all 0.3s ease; }
+#sidebar { width: 260px; background-color: var(--bg-panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 100; }
+#content-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+#topbar-mobile { display: none; }
+#main-content { flex: 1; overflow-y: auto; padding: 20px; }
+
+.profile-box { padding: 20px; border-bottom: 1px solid var(--border); text-align: center; }
+.avatar { width: 64px; height: 64px; border-radius: 50%; background: var(--border); margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+.resources-box { padding: 15px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
+.res-item { display: flex; justify-content: space-between; align-items: center; font-weight: bold; background: var(--bg-card); padding: 8px 12px; border-radius: 8px; }
+
+.nav-menu { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 5px; }
+.nav-btn { background: transparent; border: none; color: var(--text-main); text-align: left; padding: 12px 15px; border-radius: 8px; cursor: pointer; font-size: 15px; display: flex; align-items: center; gap: 10px; }
+.nav-btn:hover { background: rgba(255, 255, 255, 0.05); }
+.nav-btn.active { background: var(--accent); color: #000; font-weight: bold; }
+
+/* Элементы внутри вкладок */
+h2.tab-title { margin-bottom: 15px; border-bottom: 2px solid var(--accent); padding-bottom: 10px; display: inline-block; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+.card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 15px; }
+button.action-btn { background: var(--bg-card); color: white; border: 1px solid var(--border); padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; transition: 0.2s; margin-top: 10px; }
+button.action-btn:hover:not(:disabled) { background: var(--accent); color: #000; }
+
+#toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; pointer-events: none; }
+.toast { background: rgba(0,0,0,0.9); border: 1px solid var(--accent); color: white; padding: 12px 24px; border-radius: 30px; margin-bottom: 10px; opacity: 0; transition: 0.3s; }
+
+#loading-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--bg-dark); display: flex; justify-content: center; align-items: center; z-index: 9999; flex-direction: column; transition: opacity 0.5s; }
+.spinner { border: 4px solid var(--bg-panel); border-top: 4px solid var(--accent); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 15px; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
