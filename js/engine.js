@@ -1,35 +1,37 @@
-// Регистрируем все модули здесь
 const Modules = {
     farm: FarmModule
-    // Сюда будем добавлять shop, mine, inventory и т.д.
+};
+
+// Локальные данные, которые сбрасываются при закрытии игры
+const StateLocal = {
+    uncollected_suns: 0 
 };
 
 const App = {
     currentTab: 'farm',
     
     async init() {
-        // 1. Загрузка данных
         await API.load();
         
-        // 2. Убираем экран загрузки
         document.getElementById('loading-overlay').style.opacity = '0';
         setTimeout(() => document.getElementById('loading-overlay').style.display = 'none', 500);
 
-        // 3. Запуск
         isGameReady = true;
         this.switchTab('farm');
         this.updateUI();
         
-        // 4. Циклы
         setInterval(() => this.gameLoop(), 1000);
+        // Резервное автосохранение
         setInterval(() => {
             if (needsServerSync && isGameReady) { API.save(); needsServerSync = false; }
-        }, 5000);
+        }, 10000);
     },
 
     saveLocal() {
         needsServerSync = true;
         this.updateUI();
+        // ВАЖНО: Моментально отправляем на сервер при любом действии!
+        API.save(); 
     },
 
     updateUI() {
@@ -55,8 +57,15 @@ const App = {
 
     gameLoop() {
         if (!isGameReady || State.player.planted_seeds <= 0) return;
-        State.player.balance += State.player.planted_seeds * 0.05;
-        this.saveLocal();
+        
+        // Копим подсолнухи в накопитель урожая
+        StateLocal.uncollected_suns += (State.player.planted_seeds * 0.05);
+
+        // Обновляем циферку на экране Сада
+        const earnEl = document.getElementById('farm-earning');
+        if (earnEl) {
+            earnEl.innerText = StateLocal.uncollected_suns.toFixed(2);
+        }
     }
 };
 

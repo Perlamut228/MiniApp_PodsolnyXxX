@@ -1,19 +1,15 @@
 const FarmModule = {
-    // Цены на улучшение склада (из твоего keyboards.py)
     storageUpgradeCosts: [1, 3, 5, 8, 12, 18, 25, 35, 50, 75, 100],
 
-    // Вычисление цены расширения поля (если у тебя в logic.py другая формула, скажи, я поправлю)
     getExpandCost() {
         const p = State.player;
         if (p.field_limit >= 50) return null;
-        // Примерная цена: каждые +1 к полю стоят (текущий лимит / 2) супер-семян. 
         return Math.floor(p.field_limit / 2) || 1; 
     },
 
     render() {
         const p = State.player;
         
-        // Логика кнопок посадки (как в боте)
         let plantBtn = "";
         if (p.planted_seeds >= 50) {
             plantBtn = `<button class="action-btn" disabled>🌱 Поле на максимуме (50)</button>`;
@@ -23,13 +19,11 @@ const FarmModule = {
             plantBtn = `<button class="action-btn" onclick="FarmModule.plant()">🌱 Посадить (1 🌱✨)</button>`;
         }
 
-        // Логика кнопки расширения поля
         let expandCost = this.getExpandCost();
         let expandBtn = expandCost ? 
-            `<button class="action-btn" onclick="FarmModule.expandField()">✨ Расширить поле (${expandCost} 🌱✨)</button>` : 
+            `<button class="action-btn" onclick="FarmModule.expandField()">✨ Расширить (${expandCost} 🌱✨)</button>` : 
             "";
 
-        // Логика кнопки склада
         let storLvl = p.storage_level || 1;
         let storCost = storLvl <= this.storageUpgradeCosts.length ? this.storageUpgradeCosts[storLvl - 1] : null;
         let storageBtn = storCost ? 
@@ -43,7 +37,7 @@ const FarmModule = {
                 <div style="font-size: 64px; margin-bottom: 20px;">🌻</div>
                 <h3>Растет: ${p.planted_seeds} / ${p.field_limit} 🌱</h3>
                 <p style="color: var(--text-muted); margin: 10px 0;">
-                    Текущий доход: <b id="farm-earning" style="color:var(--accent);">${(p.planted_seeds * 0.05).toFixed(2)}</b> 🌻/сек
+                    Готово к сбору: <b id="farm-earning" style="color:var(--success);">0.00</b> 🌻
                 </p>
                 
                 <div class="grid" style="margin-top:20px;">
@@ -57,12 +51,10 @@ const FarmModule = {
             <div class="grid" style="margin-top:10px;">
                 <div class="card" style="text-align:center;">
                     <h4>Размер поля</h4>
-                    <p style="color:var(--text-muted); font-size:12px; margin-bottom:10px;">Больше семян = больше дохода</p>
                     ${expandBtn}
                 </div>
                 <div class="card" style="text-align:center;">
                     <h4>Склад (Ур. ${storLvl})</h4>
-                    <p style="color:var(--text-muted); font-size:12px; margin-bottom:10px;">Вместимость: ${p.storage_limit || 100} 🌻</p>
                     ${storageBtn}
                 </div>
             </div>
@@ -80,11 +72,9 @@ const FarmModule = {
         if (p.planted_seeds >= p.field_limit) return App.showToast("❌ Поле заполнено!");
         
         if (p.planted_seeds < 25) {
-            // Сажаем за обычные
             if (p.seeds < 1) return App.showToast("❌ Нет обычных семян!");
             p.seeds--;
         } else {
-            // Сажаем за супер-семена
             if (p.super_seeds < 1) return App.showToast("❌ Нет супер-семян!");
             p.super_seeds--;
         }
@@ -92,12 +82,12 @@ const FarmModule = {
         p.planted_seeds++;
         App.showToast("✅ Посажено!");
         App.saveLocal();
-        App.switchTab('farm'); // Перерисовываем интерфейс
+        App.switchTab('farm');
     },
 
     dig() {
         const p = State.player;
-        if (p.planted_seeds <= 0) return App.showToast("❌ Сад и так пуст!");
+        if (p.planted_seeds <= 0) return App.showToast("❌ Сад пуст!");
         
         p.planted_seeds--;
         App.showToast("⛏ Вы выкопали 1 растение.");
@@ -113,7 +103,7 @@ const FarmModule = {
         if (p.super_seeds < cost) return App.showToast(`❌ Нужно ${cost} 🌱✨`);
         
         p.super_seeds -= cost;
-        p.field_limit += 1; // Увеличиваем лимит на 1
+        p.field_limit += 1;
         App.showToast("✨ Поле расширено!");
         App.saveLocal();
         App.switchTab('farm');
@@ -125,13 +115,12 @@ const FarmModule = {
         p.storage_limit = p.storage_limit || 100;
 
         let cost = this.storageUpgradeCosts[p.storage_level - 1];
-        if (!cost) return App.showToast("❌ Максимальный уровень склада!");
+        if (!cost) return App.showToast("❌ Максимальный уровень!");
 
         if (p.super_seeds < cost) return App.showToast(`❌ Нужно ${cost} 🌱✨`);
 
         p.super_seeds -= cost;
         p.storage_level += 1;
-        // Настраиваем, сколько вместимости дает уровень (поменяй, если в боте иначе)
         p.storage_limit += 150; 
 
         App.showToast("🗄 Склад улучшен!");
@@ -143,11 +132,14 @@ const FarmModule = {
         const p = State.player;
         if (p.planted_seeds === 0) return App.showToast("❌ В саду пусто!");
         
-        // В боте сбор урожая сбрасывает planted_seeds? 
-        // Если да, раскомментируй строку ниже:
-        // p.planted_seeds = 0; 
+        // Получаем только целые числа
+        let earned = Math.floor(StateLocal.uncollected_suns);
+        if (earned <= 0) return App.showToast("⏳ Урожай еще не вырос! Подождите.");
+
+        p.balance += earned;
+        StateLocal.uncollected_suns = 0; // Сбрасываем счетчик готового урожая
         
-        App.showToast("🧺 Урожай собран!");
+        App.showToast(`🧺 Собрано ${earned} 🌻!`);
         App.saveLocal();
         App.switchTab('farm');
     }

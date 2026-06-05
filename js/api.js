@@ -1,5 +1,6 @@
 const API = {
     url: "https://kr1ogenka.pythonanywhere.com/api",
+    isSaving: false,
 
     async load() {
         if (!window.Telegram.WebApp.initData) return;
@@ -16,15 +17,22 @@ const API = {
         } catch (e) { console.error("Ошибка сети:", e); }
     },
 
-    save() {
-        if (!window.Telegram.WebApp.initData) return;
-        fetch(`${this.url}/save`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                tg_data: window.Telegram.WebApp.initData,
-                app_data: State.player
-            })
-        }).catch(e => console.log("Синхронизация в фоне"));
+    async save() {
+        if (!window.Telegram.WebApp.initData || this.isSaving) return;
+        this.isSaving = true;
+        try {
+            await fetch(`${this.url}/save`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    tg_data: window.Telegram.WebApp.initData,
+                    app_data: State.player
+                })
+            });
+        } catch (e) {
+            console.error("Ошибка сохранения:", e);
+        } finally {
+            this.isSaving = false;
+        }
     }
 };
