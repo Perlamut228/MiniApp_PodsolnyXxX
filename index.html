@@ -3,394 +3,542 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Alchemy Idle: Discovery</title>
-    <!-- Подключаем скрипт Telegram (ОБЯЗАТЕЛЬНО ДЛЯ WEB APP) -->
+    <title>Scrap Web Client</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+        /* ================= ТЕМА И ЦВЕТА ================= */
         :root {
-            --bg-color: #121212;
-            --panel-bg: #1e1e1e;
-            --text-color: #e0e0e0;
-            --accent-color: #00bfff;
-            --success-color: #4CAF50;
-            --danger-color: #f44336;
-            --mana-color: #9d4edd;
-            --cauldron-bg: #2d2a32;
+            --bg-dark: #0f0f13;
+            --bg-panel: #1c1c24;
+            --bg-card: #252530;
+            --text-main: #ffffff;
+            --text-muted: #8b8b99;
+            --accent: #ff9800; /* Цвет подсолнуха */
+            --accent-hover: #e68900;
+            --mana: #9d4edd;
+            --dia: #00e5ff;
+            --border: #333344;
+            --danger: #ff4757;
+            --success: #2ed573;
         }
 
-        body {
-            margin: 0; padding: 10px; background-color: var(--bg-color); color: var(--text-color);
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            user-select: none; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, sans-serif; }
+        body { background-color: var(--bg-dark); color: var(--text-main); overflow: hidden; user-select: none; }
 
-        header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 10px 20px; background: var(--panel-bg); border: 1px solid #333;
-            border-radius: 8px; margin-bottom: 10px; flex-shrink: 0;
-        }
-
-        .stat-box { font-size: 18px; font-weight: bold; }
-        .mana { color: var(--mana-color); font-size: 24px; text-shadow: 0 0 5px var(--mana-color); }
-
-        .storage-bar-container {
-            width: 300px; height: 20px; background: #000; border-radius: 10px;
-            border: 1px solid #444; overflow: hidden; position: relative;
-        }
-        .storage-bar-fill { height: 100%; background: var(--accent-color); width: 0%; transition: width 0.3s; }
-        .storage-text {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            text-align: center; font-size: 14px; line-height: 20px; color: white; text-shadow: 1px 1px 2px black;
-        }
-
-        #game-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; flex-grow: 1; overflow: hidden; }
-        @media (max-width: 900px) { #game-grid { grid-template-columns: 1fr; overflow-y: auto; } }
-
-        .panel { background: var(--panel-bg); border: 1px solid #333; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; overflow-y: auto; }
-        .panel-title { text-align: center; font-size: 20px; margin-top: 0; padding-bottom: 10px; border-bottom: 1px solid #333; margin-bottom: 15px; }
-
-        button { background: #333; color: var(--text-color); border: 1px solid #555; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 14px; transition: 0.1s; }
-        button:hover:not(:disabled) { background: #444; }
-        button:active:not(:disabled) { transform: scale(0.95); }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        .card { background: #2a2a2a; padding: 10px; border-radius: 5px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333; }
-        .btn-gather { background: #2E8B57; font-weight: bold; }
-        .btn-sell { background: #8b0000; font-size: 12px; }
-        .btn-add { background: #4682B4; font-size: 12px; }
-
-        #cauldron-zone { background: var(--cauldron-bg); border: 2px dashed #9d4edd; border-radius: 8px; padding: 15px; margin-top: auto; text-align: center; }
-        #cauldron-items { min-height: 40px; margin-bottom: 10px; font-size: 20px; letter-spacing: 5px; }
-        .cauldron-controls { display: flex; gap: 10px; }
-        .cauldron-controls button { flex: 1; font-weight: bold; }
-        .btn-brew { background: #9d4edd; font-size: 16px; border-color: #6a0dad; }
+        /* ================= КАРКАС ПРИЛОЖЕНИЯ ================= */
+        #app { display: flex; height: 100vh; width: 100vw; transition: all 0.3s ease; }
         
-        .recipe-card { flex-direction: column; gap: 10px; align-items: stretch; }
-        .recipe-reqs { font-size: 12px; color: #aaa; text-align: center; }
-        .recipe-actions { display: flex; gap: 10px; }
-        .btn-auto { background: #4b0082 !important; }
+        #sidebar {
+            width: 260px; background-color: var(--bg-panel); border-right: 1px solid var(--border);
+            display: flex; flex-direction: column; z-index: 100;
+        }
+        
+        #content-area {
+            flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative;
+        }
 
-        #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
-        .toast { background: rgba(0,0,0,0.9); border: 1px solid var(--accent-color); padding: 10px 20px; border-radius: 20px; font-weight: bold; animation: slideDown 0.3s, fadeOut 0.5s 2.5s forwards; }
-        @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes fadeOut { to { opacity: 0; } }
-        .secret-text { text-align: center; color: #666; font-style: italic; margin-top: 20px; }
+        #topbar-mobile { display: none; } /* Виден только на мобилках */
+
+        #main-content {
+            flex: 1; overflow-y: auto; padding: 20px;
+        }
+
+        /* ================= ПРОФИЛЬ И РЕСУРСЫ (САЙДБАР) ================= */
+        .profile-box { padding: 20px; border-bottom: 1px solid var(--border); text-align: center; }
+        .avatar { width: 64px; height: 64px; border-radius: 50%; background: var(--border); margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+        .username { font-weight: bold; font-size: 16px; margin-bottom: 5px; }
+        .user-id { font-size: 12px; color: var(--text-muted); }
+
+        .resources-box { padding: 15px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
+        .res-item { display: flex; justify-content: space-between; align-items: center; font-weight: bold; background: var(--bg-card); padding: 8px 12px; border-radius: 8px; }
+        .res-item span:last-child { font-family: monospace; font-size: 15px; }
+        .res-sun { color: var(--accent); }
+        .res-dia { color: var(--dia); }
+        .res-mana { color: var(--mana); }
+
+        /* ================= МЕНЮ НАВИГАЦИИ ================= */
+        .nav-menu { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 5px; }
+        .nav-btn {
+            background: transparent; border: none; color: var(--text-main); text-align: left;
+            padding: 12px 15px; border-radius: 8px; cursor: pointer; font-size: 15px;
+            display: flex; align-items: center; gap: 10px; transition: background 0.2s;
+        }
+        .nav-btn:hover { background: rgba(255, 255, 255, 0.05); }
+        .nav-btn.active { background: var(--accent); color: #000; font-weight: bold; }
+        
+        /* ================= МОБИЛЬНЫЙ РЕЖИМ (Или узкий экран) ================= */
+        body.mobile-mode #app { flex-direction: column; }
+        
+        body.mobile-mode #sidebar {
+            width: 100%; height: 70px; border-right: none; border-top: 1px solid var(--border);
+            flex-direction: row; order: 3; /* Вниз */
+        }
+        
+        body.mobile-mode .profile-box, 
+        body.mobile-mode .resources-box { display: none; } /* Прячем в нижнем баре */
+        
+        body.mobile-mode .nav-menu {
+            flex-direction: row; justify-content: space-around; align-items: center; padding: 5px; width: 100%;
+            overflow-x: auto;
+        }
+        
+        body.mobile-mode .nav-btn {
+            flex-direction: column; padding: 8px 5px; font-size: 10px; gap: 4px; border-radius: 12px;
+            min-width: 60px; text-align: center; justify-content: center;
+        }
+        
+        body.mobile-mode #topbar-mobile {
+            display: flex; order: 1; background: var(--bg-panel); border-bottom: 1px solid var(--border);
+            padding: 10px 15px; justify-content: space-between; align-items: center; z-index: 10;
+        }
+        
+        body.mobile-mode #content-area { order: 2; }
+        body.mobile-mode #main-content { padding: 10px; }
+
+        /* ================= UI ЭЛЕМЕНТЫ ВНУТРИ ВЛАДОК ================= */
+        h2.tab-title { margin-bottom: 15px; border-bottom: 2px solid var(--accent); padding-bottom: 10px; display: inline-block; }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+        .card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 15px; }
+        
+        button.action-btn {
+            background: var(--bg-card); color: white; border: 1px solid var(--border);
+            padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold;
+            transition: 0.2s; margin-top: 10px;
+        }
+        button.action-btn:hover:not(:disabled) { background: var(--accent); color: #000; }
+        button.action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .progress-bar { width: 100%; height: 10px; background: var(--bg-dark); border-radius: 5px; margin-top: 10px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 1s linear; }
+
+        /* Всплывающие уведомления */
+        #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; pointer-events: none; }
+        .toast { background: rgba(0,0,0,0.9); border: 1px solid var(--accent); color: white; padding: 12px 24px; border-radius: 30px; margin-bottom: 10px; font-size: 14px; opacity: 0; transition: 0.3s; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+
+        /* Переключатель */
+        .toggle-container { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+        .toggle-switch { position: relative; width: 50px; height: 24px; background: var(--bg-dark); border-radius: 12px; cursor: pointer; border: 1px solid var(--border); }
+        .toggle-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; background: var(--text-muted); border-radius: 50%; transition: 0.3s; }
+        .toggle-switch.on { background: var(--accent); border-color: var(--accent); }
+        .toggle-switch.on::after { left: 28px; background: #000; }
+
     </style>
 </head>
 <body>
-
     <div id="toast-container"></div>
 
-    <header>
-        <div class="stat-box" onclick="resetSave()" style="cursor: pointer;" title="Кликните чтобы сбросить прогресс">Мана: <span id="manaDisplay" class="mana">0 🔮</span></div>
-        <div class="storage-bar-container">
-            <div id="storageFill" class="storage-bar-fill"></div>
-            <div id="storageText" class="storage-text">Склад: 0 / 50</div>
-        </div>
-    </header>
-
-    <div id="game-grid">
-        <!-- Сбор Сырья -->
-        <div class="panel">
-            <h2 class="panel-title">Сбор Сырья</h2>
-            <div class="card"><div><span>💧</span> Вода</div><button class="btn-gather" onclick="gather('water')">Собрать</button></div>
-            <div class="card"><div><span>🪨</span> Земля</div><button class="btn-gather" onclick="gather('dirt')">Собрать</button></div>
-            <div class="card"><div><span>🌰</span> Семечко</div><button class="btn-gather" onclick="gather('seed')">Собрать</button></div>
-
-            <div style="margin-top: auto; background: #2a2a2a; padding: 15px; border-radius: 8px; text-align: center;">
-                <h3>Улучшение склада</h3>
-                <p style="font-size: 12px; color: #aaa;">Увеличивает вместимость на +25</p>
-                <button id="btnUpgradeStorage" onclick="upgradeStorage()" style="width: 100%; background: #4CAF50; font-weight: bold;">Купить за <span id="btnCost">50</span> 🔮</button>
+    <div id="app">
+        <!-- БОКОВАЯ ПАНЕЛЬ (ПК) / НИЖНЯЯ ПАНЕЛЬ (Мобайл) -->
+        <aside id="sidebar">
+            <div class="profile-info profile-box">
+                <div class="avatar" id="ui-avatar">🤖</div>
+                <div class="username" id="ui-username">Игрок</div>
+                <div class="user-id" id="ui-userid">ID: 0000000</div>
             </div>
-        </div>
 
-        <!-- Склад и Котел -->
-        <div class="panel">
-            <h2 class="panel-title">Склад</h2>
-            <div id="inventoryContainer" style="flex-grow: 1; overflow-y: auto; margin-bottom: 15px;"></div>
-
-            <div id="cauldron-zone">
-                <h3 style="margin-top: 0;">🧪 Алхимический Котел</h3>
-                <p style="font-size: 12px; color: #aaa; margin: 5px 0;">Кладите сюда предметы, чтобы открывать рецепты</p>
-                <div id="cauldron-items">Пусто</div>
-                <div class="cauldron-controls">
-                    <button onclick="clearCauldron()" style="background: #555;">Очистить</button>
-                    <button class="btn-brew" onclick="brew()">Сварить!</button>
-                </div>
+            <div class="resources-box">
+                <div class="res-item res-sun"><span>🌻 Баланс</span> <span id="ui-sun">0</span></div>
+                <div class="res-item res-dia"><span>💎 Алмазы</span> <span id="ui-dia">0</span></div>
+                <div class="res-item res-mana"><span>🔮 Мана</span> <span id="ui-mana">0</span></div>
             </div>
-        </div>
 
-        <!-- Рецепты -->
-        <div class="panel">
-            <h2 class="panel-title">Открытые Рецепты</h2>
-            <div id="recipesContainer"></div>
+            <nav class="nav-menu">
+                <button class="nav-btn active" onclick="App.switchTab('farm')" data-tab="farm"><span>🏡</span> Сад</button>
+                <button class="nav-btn" onclick="App.switchTab('mine')" data-tab="mine"><span>🤫</span> Шахта</button>
+                <button class="nav-btn" onclick="App.switchTab('alchemy')" data-tab="alchemy"><span>🧪</span> Алхимия</button>
+                <button class="nav-btn" onclick="App.switchTab('shop')" data-tab="shop"><span>🛒</span> Магазин</button>
+                <button class="nav-btn" onclick="App.switchTab('settings')" data-tab="settings"><span>⚙️</span> Настройки</button>
+            </nav>
+        </aside>
+
+        <!-- ОСНОВНАЯ ЗОНА -->
+        <div id="content-area">
+            <!-- ВЕРХНЯЯ ПАНЕЛЬ (Только для мобилок) -->
+            <div id="topbar-mobile">
+                <div style="font-weight: bold; color: var(--accent);">🌻 <span id="mob-sun">0</span></div>
+                <div style="font-weight: bold; color: var(--dia);">💎 <span id="mob-dia">0</span></div>
+                <div style="font-weight: bold; color: var(--mana);">🔮 <span id="mob-mana">0</span></div>
+            </div>
+
+            <!-- ДИНАМИЧЕСКИЙ КОНТЕНТ -->
+            <main id="main-content">
+                <!-- Сюда JS рендерит HTML вкладки -->
+            </main>
         </div>
     </div>
 
-    <!-- Логика игры -->
     <script>
-        // ИНИЦИАЛИЗАЦИЯ TELEGRAM
         const tg = window.Telegram.WebApp;
-        tg.expand(); // На весь экран
-        tg.ready();  // Сообщаем телеграму, что мы загрузились
+        tg.ready();
+        tg.expand();
 
-        // АДРЕС БЭКЕНДА
-        const API_URL = "https://kriogenka.pythonanywhere.com"; 
+        // ================= ГЛОБАЛЬНОЕ СОСТОЯНИЕ ИГРЫ =================
+        const State = {
+            settings: { mobileLayout: false },
+            player: {
+                balance: 1000,   // 🌻 Стартовый бонус для тестов
+                diamonds: 5,     // 💎
+                seeds: 10,       // 🌱
+                super_seeds: 0,  // 🌱✨
+                
+                // Шахта
+                pickaxe_level: 1,
+                mine_start: null, 
+                
+                // Сад
+                planted_seeds: 0,
+                field_limit: 5,
 
-        const ITEMS = {
-            'water': { name: 'Вода', icon: '💧', price: 1 },
-            'dirt': { name: 'Земля', icon: '🪨', price: 1 },
-            'seed': { name: 'Семечко', icon: '🌰', price: 2 },
-            'sprout': { name: 'Росток', icon: '🌱', price: 8 },
-            'root': { name: 'Корень', icon: '🥕', price: 10 },
-            'clay': { name: 'Глина', icon: '🏺', price: 6 },
-            'flask': { name: 'Пустая Колба', icon: '🫙', price: 25 },
-            'flower': { name: 'Маг. Цветок', icon: '🌸', price: 30 },
-            'hp_potion': { name: 'Зелье Жизни', icon: '❤️', price: 150 },
-            'mana_potion': { name: 'Зелье Маны', icon: '💙', price: 200 }
+                // Алхимия (перенесено из прошлого кода)
+                mana: 0,
+                inventory: {},
+                discoveredRecipes: [],
+                autoCrafters: {}
+            }
         };
 
-        const RECIPES = [
-            { id: 'sprout', result: 'sprout', ingredients: { 'water': 1, 'seed': 1 }, autoCost: 50 },
-            { id: 'root', result: 'root', ingredients: { 'dirt': 1, 'seed': 1 }, autoCost: 60 },
-            { id: 'clay', result: 'clay', ingredients: { 'water': 2, 'dirt': 1 }, autoCost: 40 },
-            { id: 'flower', result: 'flower', ingredients: { 'sprout': 1, 'dirt': 1 }, autoCost: 150 },
-            { id: 'flask', result: 'flask', ingredients: { 'clay': 1, 'root': 1 }, autoCost: 120 },
-            { id: 'hp_potion', result: 'hp_potion', ingredients: { 'flask': 1, 'flower': 1, 'water': 1 }, autoCost: 500 },
-            { id: 'mana_potion', result: 'mana_potion', ingredients: { 'flask': 1, 'sprout': 1, 'water': 2 }, autoCost: 600 }
-        ];
+        let needsServerSync = false;
 
-        let state = { mana: 0, storageMax: 50, storageCost: 50, inventory: {}, discoveredRecipes: [], autoCrafters: {} };
-        let cauldron = {};
-        
-        let needsServerSync = false; // Флаг для синхронизации
-
-        // === СОХРАНЕНИЕ ПРОГРЕССА ===
-        function saveGame() {
-            localStorage.setItem('alchemySave', JSON.stringify(state)); // Резерв в браузере
-            needsServerSync = true; // Отмечаем, что нужно отправить данные на Python-сервер
-        }
-
-        // === СИНХРОНИЗАЦИЯ С СЕРВЕРОМ РАЗ В 5 СЕКУНД ===
-        async function syncWithServer() {
-            if (!needsServerSync) return; // Если ничего не менялось, не спамим сервер
+        // ================= ЯДРО ПРИЛОЖЕНИЯ =================
+        const App = {
+            currentTab: 'farm',
             
-            const initData = tg.initData;
-            if (!initData) {
-                needsServerSync = false; // Если открыто не в ТГ, отключаем синхронизацию
-                return;
-            }
-
-            try {
-                let response = await fetch(`${API_URL}/api/save`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        tg_data: initData,      // Отправляем безопасный токен Телеграма
-                        mana: state.mana,
-                        inventory: state.inventory 
-                    })
-                });
+            init() {
+                this.loadLocal();
+                this.applyLayout();
+                this.setupProfile();
+                this.switchTab('farm');
+                this.updateUI();
                 
-                if (response.ok) {
-                    needsServerSync = false; // Успешно отправлено
+                // Игровой цикл
+                setInterval(() => this.gameLoop(), 1000);
+                // Цикл сохранения на сервер
+                setInterval(() => {
+                    if (needsServerSync) { this.saveToServer(); needsServerSync = false; }
+                }, 5000);
+            },
+
+            loadLocal() {
+                const saved = localStorage.getItem('scrapAppState');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    State.settings = parsed.settings || State.settings;
+                    State.player = { ...State.player, ...parsed.player };
                 }
-            } catch (err) { 
-                console.log("Сервер не ответил, но сохранено локально."); 
-            }
-        }
+            },
 
-        setInterval(syncWithServer, 5000); // Запускаем проверку синхронизации
+            saveLocal() {
+                localStorage.setItem('scrapAppState', JSON.stringify(State));
+                needsServerSync = true;
+                this.updateUI();
+            },
 
-        // === ЗАГРУЗКА ИГРЫ ===
-        async function loadGame() {
-            // Пока грузим локально, так как маршрута загрузки на сервере еще нет
-            let saved = localStorage.getItem('alchemySave');
-            if (saved) state = JSON.parse(saved);
+            saveToServer() {
+                if (!tg.initData) return;
+                fetch("https://kriogenka.pythonanywhere.com/api/save", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        tg_data: tg.initData,
+                        app_data: State.player // Отправляем ВСЕ данные
+                    })
+                }).catch(e => console.log("Синхронизация в фоне"));
+            },
 
-            // Проверка структуры (защита от багов)
-            if(!state.discoveredRecipes) state.discoveredRecipes = [];
-            if(!state.autoCrafters) state.autoCrafters = {};
-            if(!state.inventory) state.inventory = {};
-            if(!state.storageCost) state.storageCost = 50;
-            
-            updateUI();
-        }
-
-        function resetSave() {
-            if(confirm("Сбросить прогресс?")) {
-                localStorage.removeItem('alchemySave');
-                state = { mana: 0, storageMax: 50, storageCost: 50, inventory: {}, discoveredRecipes: [], autoCrafters: {} };
-                saveGame();
-                updateUI();
-            }
-        }
-
-        function showToast(text, color = "var(--accent-color)") {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = 'toast'; toast.style.borderColor = color; toast.style.color = color;
-            toast.innerText = text; container.appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
-        }
-
-        function getUsedStorage() { let total = 0; for (let item in state.inventory) total += state.inventory[item]; return total; }
-
-        function gather(itemId) {
-            if (getUsedStorage() < state.storageMax) {
-                state.inventory[itemId] = (state.inventory[itemId] || 0) + 1;
-                saveGame(); updateUI();
-            } else showToast("Склад переполнен!", "var(--danger-color)");
-        }
-
-        function sellItem(itemId) {
-            let amount = state.inventory[itemId];
-            if (amount > 0) {
-                state.mana += ITEMS[itemId].price * amount;
-                state.inventory[itemId] = 0;
-                saveGame(); updateUI();
-            }
-        }
-
-        function addToCauldron(itemId) {
-            if (state.inventory[itemId] > 0) { state.inventory[itemId]--; cauldron[itemId] = (cauldron[itemId] || 0) + 1; updateUI(); }
-        }
-
-        function clearCauldron() {
-            for (let item in cauldron) state.inventory[item] = (state.inventory[item] || 0) + cauldron[item];
-            cauldron = {}; updateUI();
-        }
-
-        function brew() {
-            if (Object.keys(cauldron).length === 0) return;
-            let matchedRecipe = null;
-            for (let r of RECIPES) {
-                let isMatch = true; let cKeys = Object.keys(cauldron); let rKeys = Object.keys(r.ingredients);
-                if (cKeys.length !== rKeys.length) isMatch = false;
-                else { for (let key of cKeys) { if (cauldron[key] !== r.ingredients[key]) { isMatch = false; break; } } }
-                if (isMatch) { matchedRecipe = r; break; }
-            }
-
-            if (matchedRecipe) {
-                state.inventory[matchedRecipe.result] = (state.inventory[matchedRecipe.result] || 0) + 1;
-                cauldron = {}; 
-                if (!state.discoveredRecipes.includes(matchedRecipe.id)) {
-                    state.discoveredRecipes.push(matchedRecipe.id);
-                    showToast(`✨ НОВЫЙ РЕЦЕПТ: ${ITEMS[matchedRecipe.result].name}!`, "var(--success-color)");
-                } else showToast(`Сварено: ${ITEMS[matchedRecipe.result].name}`);
-            } else {
-                clearCauldron(); showToast("Бурда... Ингредиенты возвращены.", "var(--danger-color)");
-            }
-            saveGame(); updateUI();
-        }
-
-        function craft(recipeId) {
-            const recipe = RECIPES.find(r => r.id === recipeId);
-            for (let req in recipe.ingredients) if ((state.inventory[req] || 0) < recipe.ingredients[req]) return;
-            let itemsRemoved = 0; for (let req in recipe.ingredients) itemsRemoved += recipe.ingredients[req];
-            if (getUsedStorage() - itemsRemoved + 1 > state.storageMax) return;
-            for (let req in recipe.ingredients) state.inventory[req] -= recipe.ingredients[req];
-            state.inventory[recipe.result] = (state.inventory[recipe.result] || 0) + 1;
-            saveGame(); updateUI();
-        }
-
-        function buyAutoCrafter(recipeId) {
-            const recipe = RECIPES.find(r => r.id === recipeId);
-            if (state.mana >= recipe.autoCost && !state.autoCrafters[recipeId]) {
-                state.mana -= recipe.autoCost; state.autoCrafters[recipeId] = true;
-                saveGame(); updateUI();
-            }
-        }
-
-        function upgradeStorage() {
-            if (state.mana >= state.storageCost) {
-                state.mana -= state.storageCost; state.storageMax += 25;
-                state.storageCost = Math.floor(state.storageCost * 1.5);
-                saveGame(); updateUI();
-            }
-        }
-
-        function updateUI() {
-            document.getElementById('manaDisplay').innerText = `${state.mana} 🔮`;
-            let used = getUsedStorage();
-            document.getElementById('storageText').innerText = `Склад: ${used} / ${state.storageMax}`;
-            document.getElementById('storageFill').style.width = `${(used / state.storageMax) * 100}%`;
-            document.getElementById('storageFill').style.background = used >= state.storageMax ? 'var(--danger-color)' : 'var(--accent-color)';
-            
-            let btnStorage = document.getElementById('btnUpgradeStorage');
-            document.getElementById('btnCost').innerText = state.storageCost;
-            btnStorage.disabled = state.mana < state.storageCost;
-
-            let invHTML = '';
-            for (let itemId in state.inventory) {
-                let amount = state.inventory[itemId];
-                if (amount > 0) {
-                    let item = ITEMS[itemId];
-                    invHTML += `<div class="card" style="padding: 5px 10px;">
-                                <div>${item.icon} <b>${item.name}</b>: ${amount}</div>
-                                <div style="display:flex; gap:5px;">
-                                    <button class="btn-add" onclick="addToCauldron('${itemId}')">+ В котел</button>
-                                    <button class="btn-sell" onclick="sellItem('${itemId}')">Продать (+${item.price * amount})</button>
-                                </div></div>`;
-                }
-            }
-            document.getElementById('inventoryContainer').innerHTML = invHTML || '<div style="color: #666; text-align: center;">Склад пуст</div>';
-
-            let cauldronHTML = '';
-            for(let cItem in cauldron) for(let i=0; i<cauldron[cItem]; i++) cauldronHTML += ITEMS[cItem].icon + ' ';
-            document.getElementById('cauldron-items').innerHTML = cauldronHTML || '<span style="color:#666">Пусто</span>';
-
-            let recipesHTML = '';
-            if (state.discoveredRecipes.length === 0) recipesHTML = '<div class="secret-text">Экспериментируйте в котле, чтобы открыть рецепты!</div>';
-            else {
-                RECIPES.forEach(recipe => {
-                    if (state.discoveredRecipes.includes(recipe.id)) {
-                        let resItem = ITEMS[recipe.result];
-                        let reqStr = []; let canCraft = true;
-                        for (let reqItem in recipe.ingredients) {
-                            let reqAmount = recipe.ingredients[reqItem]; let currentAmount = state.inventory[reqItem] || 0;
-                            let color = currentAmount >= reqAmount ? 'var(--success-color)' : 'var(--danger-color)';
-                            reqStr.push(`<span style="color:${color}">${ITEMS[reqItem].icon} ${currentAmount}/${reqAmount}</span>`);
-                            if (currentAmount < reqAmount) canCraft = false;
-                        }
-                        let autoBtnHTML = state.autoCrafters[recipe.id] 
-                            ? `<button disabled class="btn-auto">Авто ✅</button>`
-                            : `<button class="btn-auto" onclick="buyAutoCrafter('${recipe.id}')" ${state.mana < recipe.autoCost ? 'disabled' : ''}>Авто (${recipe.autoCost}🔮)</button>`;
-                        recipesHTML += `<div class="card recipe-card">
-                                        <div style="font-weight: bold; font-size: 16px;">${resItem.icon} ${resItem.name}</div>
-                                        <div class="recipe-reqs">${reqStr.join(' + ')}</div>
-                                        <div class="recipe-actions">
-                                            <button style="flex:2; background:#2E8B57;" onclick="craft('${recipe.id}')" ${!canCraft ? 'disabled' : ''}>Создать</button>
-                                            ${autoBtnHTML}
-                                        </div></div>`;
-                    }
-                });
-            }
-            document.getElementById('recipesContainer').innerHTML = recipesHTML;
-        }
-
-        // Авто-крафт
-        setInterval(() => {
-            let stateChanged = false;
-            RECIPES.forEach(recipe => {
-                if (state.autoCrafters[recipe.id] && state.discoveredRecipes.includes(recipe.id)) {
-                    let canCraft = true;
-                    for (let req in recipe.ingredients) if ((state.inventory[req] || 0) < recipe.ingredients[req]) canCraft = false;
-                    if (canCraft) {
-                        let itemsRemoved = 0; for (let req in recipe.ingredients) itemsRemoved += recipe.ingredients[req];
-                        if (getUsedStorage() - itemsRemoved + 1 <= state.storageMax) {
-                            for (let req in recipe.ingredients) state.inventory[req] -= recipe.ingredients[req];
-                            state.inventory[recipe.result] = (state.inventory[recipe.result] || 0) + 1;
-                            stateChanged = true;
-                        }
+            setupProfile() {
+                if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                    const u = tg.initDataUnsafe.user;
+                    document.getElementById('ui-username').innerText = u.first_name || "Игрок";
+                    document.getElementById('ui-userid').innerText = "ID: " + u.id;
+                    if(u.photo_url) {
+                        document.getElementById('ui-avatar').innerHTML = `<img src="${u.photo_url}" style="width:100%; height:100%; border-radius:50%;">`;
                     }
                 }
-            });
-            if (stateChanged) { saveGame(); updateUI(); }
-        }, 1000);
+            },
 
-        // Старт игры
-        loadGame();
+            updateUI() {
+                const p = State.player;
+                document.getElementById('ui-sun').innerText = Math.floor(p.balance);
+                document.getElementById('ui-dia').innerText = p.diamonds;
+                document.getElementById('ui-mana').innerText = p.mana;
+                
+                document.getElementById('mob-sun').innerText = Math.floor(p.balance);
+                document.getElementById('mob-dia').innerText = p.diamonds;
+                document.getElementById('mob-mana').innerText = p.mana;
+            },
+
+            switchTab(tabName) {
+                this.currentTab = tabName;
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                document.querySelector(`.nav-btn[data-tab="${tabName}"]`).classList.add('active');
+                
+                const content = document.getElementById('main-content');
+                content.innerHTML = Modules[tabName].render();
+                if(Modules[tabName].onLoad) Modules[tabName].onLoad();
+            },
+
+            applyLayout() {
+                const isMobile = State.settings.mobileLayout || window.innerWidth < 600;
+                if(isMobile) document.body.classList.add('mobile-mode');
+                else document.body.classList.remove('mobile-mode');
+            },
+
+            toggleMobileLayout() {
+                State.settings.mobileLayout = !State.settings.mobileLayout;
+                this.applyLayout();
+                this.saveLocal();
+                this.switchTab('settings'); // Перерисовка кнопки
+            },
+
+            showToast(msg) {
+                const container = document.getElementById('toast-container');
+                const t = document.createElement('div'); t.className = 'toast'; t.innerText = msg;
+                container.appendChild(t);
+                setTimeout(() => t.style.opacity = '1', 10);
+                setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 2000);
+            },
+
+            gameLoop() {
+                let changed = false;
+                
+                // Логика роста сада
+                if (State.player.planted_seeds > 0) {
+                    // +0.05 🌻 за семечко в секунду (как в боте, но плавно)
+                    State.player.balance += State.player.planted_seeds * 0.05;
+                    changed = true;
+                }
+
+                if (changed) this.saveLocal();
+                
+                // Если мы на вкладке Сада, обновляем цифры без мерцания
+                if (this.currentTab === 'farm') {
+                    const earnEl = document.getElementById('farm-earning');
+                    if(earnEl) earnEl.innerText = (State.player.planted_seeds * 0.05).toFixed(2);
+                }
+                // Если мы на вкладке Шахты, обновляем таймер
+                if (this.currentTab === 'mine') {
+                    Modules.mine.updateTimer();
+                }
+            }
+        };
+
+        // ================= ИГРОВЫЕ МОДУЛИ (ВЛАДКИ) =================
+        const Modules = {
+            // --- Вкладка: САД ---
+            farm: {
+                render() {
+                    const p = State.player;
+                    return `
+                        <h2 class="tab-title">🏡 Мой Сад</h2>
+                        <div class="card" style="text-align:center; padding: 30px;">
+                            <div style="font-size: 64px; margin-bottom: 20px;">🌻</div>
+                            <h3>Растет: ${p.planted_seeds} / ${p.field_limit} 🌱</h3>
+                            <p style="color: var(--text-muted); margin: 10px 0;">Доход: <b id="farm-earning" style="color:var(--accent);">${(p.planted_seeds * 0.05).toFixed(2)}</b> 🌻/сек</p>
+                            
+                            <div class="grid" style="margin-top:20px;">
+                                <button class="action-btn" onclick="Modules.farm.plant()">Посадить 1 🌱</button>
+                                <button class="action-btn" onclick="Modules.farm.harvest()" style="background:var(--success);">Собрать урожай</button>
+                            </div>
+                        </div>
+                        
+                        <h3 style="margin-top:20px; border-bottom: 1px solid #333; padding-bottom:10px;">Инвентарь сада</h3>
+                        <div class="grid" style="margin-top:10px;">
+                            <div class="card" style="text-align:center;">Обычные семена<br><b style="font-size:20px;">${p.seeds} 🌱</b></div>
+                            <div class="card" style="text-align:center;">Супер-семена<br><b style="font-size:20px; color:#ffdd59;">${p.super_seeds} 🌱✨</b></div>
+                        </div>
+                    `;
+                },
+                plant() {
+                    if (State.player.planted_seeds >= State.player.field_limit) return App.showToast("Поле заполнено!");
+                    if (State.player.seeds < 1) return App.showToast("Нет семян! Купите в магазине.");
+                    
+                    State.player.seeds--;
+                    State.player.planted_seeds++;
+                    App.showToast("Посажено!");
+                    App.saveLocal();
+                    App.switchTab('farm'); // Перерендер
+                },
+                harvest() {
+                    if (State.player.planted_seeds === 0) return App.showToast("В саду пусто!");
+                    App.showToast("Урожай собран, счетчик обнулен!");
+                    State.player.planted_seeds = 0;
+                    App.saveLocal();
+                    App.switchTab('farm');
+                }
+            },
+
+            // --- Вкладка: ШАХТА ---
+            mine: {
+                render() {
+                    const p = State.player;
+                    const pickaxeNames = ["Деревянная", "Железная", "Золотая", "Алмазная", "Космическая"];
+                    const pName = p.pickaxe_level <= 5 ? pickaxeNames[p.pickaxe_level-1] : "Максимальная";
+                    
+                    let actionHtml = '';
+                    if (p.mine_start) {
+                        actionHtml = `
+                            <p style="color:var(--accent);">Рабочий в шахте!</p>
+                            <div class="progress-bar"><div class="progress-fill" id="mine-progress"></div></div>
+                            <p id="mine-timer" style="margin-top:5px; font-family:monospace;">Вычисляем...</p>
+                            <button class="action-btn" id="btn-collect-mine" onclick="Modules.mine.collect()" disabled>Забрать добычу</button>
+                        `;
+                    } else {
+                        actionHtml = `<button class="action-btn" onclick="Modules.mine.sendWorker()">⛏ Отправить в шахту</button>`;
+                    }
+
+                    return `
+                        <h2 class="tab-title">🤫 Глубокая Шахта</h2>
+                        <div class="grid">
+                            <div class="card">
+                                <h3>Ваша кирка: ${pName} (Ур. ${p.pickaxe_level})</h3>
+                                <p style="color: var(--text-muted); font-size:14px; margin-top:5px;">Чем лучше кирка, тем быстрее добываются алмазы.</p>
+                                <hr style="border:0; border-top:1px solid #333; margin:15px 0;">
+                                ${actionHtml}
+                            </div>
+                            <div class="card" style="text-align:center; display:flex; flex-direction:column; justify-content:center;">
+                                <div style="font-size: 48px;">💎</div>
+                                <h3>Алмазов на складе: ${p.diamonds}</h3>
+                            </div>
+                        </div>
+                    `;
+                },
+                getHoursNeeded() { return Math.max(2, 10 - (State.player.pickaxe_level * 2)); },
+                sendWorker() {
+                    State.player.mine_start = Date.now();
+                    App.saveLocal();
+                    App.switchTab('mine');
+                    App.showToast("Рабочий ушел в шахту!");
+                },
+                updateTimer() {
+                    if(!State.player.mine_start) return;
+                    const elTimer = document.getElementById('mine-timer');
+                    const elProg = document.getElementById('mine-progress');
+                    const btn = document.getElementById('btn-collect-mine');
+                    if(!elTimer) return;
+
+                    const now = Date.now();
+                    const neededMs = this.getHoursNeeded() * 60 * 1000; // Для теста в Web App: часы заменены на минуты (10 мин вместо 10 часов)
+                    const passedMs = now - State.player.mine_start;
+                    
+                    if (passedMs >= neededMs) {
+                        elTimer.innerText = "Готово!";
+                        elProg.style.width = "100%";
+                        if(btn) { btn.disabled = false; btn.style.background = "var(--success)"; }
+                    } else {
+                        const left = neededMs - passedMs;
+                        const m = Math.floor(left / 60000);
+                        const s = Math.floor((left % 60000) / 1000);
+                        elTimer.innerText = `Осталось: ${m}м ${s}с`; // В продакшене перевести обратно в часы
+                        elProg.style.width = (passedMs / neededMs * 100) + "%";
+                    }
+                },
+                collect() {
+                    State.player.mine_start = null;
+                    State.player.diamonds += 1;
+                    App.saveLocal();
+                    App.switchTab('mine');
+                    App.showToast("Добыт 1 💎 Алмаз!");
+                }
+            },
+
+            // --- Вкладка: МАГАЗИН ---
+            shop: {
+                render() {
+                    return `
+                        <h2 class="tab-title">🛒 Магазин</h2>
+                        <div class="grid">
+                            <div class="card">
+                                <div style="font-size:32px; margin-bottom:10px;">🌱</div>
+                                <h3>1 Семечко</h3>
+                                <p style="color:var(--text-muted); font-size:12px; margin-bottom:10px;">Для посадки в саду</p>
+                                <button class="action-btn" onclick="Modules.shop.buy('seed', 100)">Купить (100 🌻)</button>
+                            </div>
+                            <div class="card">
+                                <div style="font-size:32px; margin-bottom:10px;">🌱✨</div>
+                                <h3>1 Супер-Семечко</h3>
+                                <p style="color:var(--text-muted); font-size:12px; margin-bottom:10px;">Элитный ресурс</p>
+                                <button class="action-btn" onclick="Modules.shop.buy('super', 500)">Купить (500 🌻)</button>
+                            </div>
+                            <div class="card">
+                                <div style="font-size:32px; margin-bottom:10px;">⛏</div>
+                                <h3>Улучшить Кирку</h3>
+                                <p style="color:var(--text-muted); font-size:12px; margin-bottom:10px;">Ускоряет добычу 💎</p>
+                                <button class="action-btn" onclick="Modules.shop.upgradePickaxe()">Улучшить (3 💎)</button>
+                            </div>
+                        </div>
+                    `;
+                },
+                buy(type, cost) {
+                    if(State.player.balance < cost) return App.showToast("Не хватает 🌻!");
+                    State.player.balance -= cost;
+                    if(type==='seed') State.player.seeds++;
+                    if(type==='super') State.player.super_seeds++;
+                    App.saveLocal();
+                    App.switchTab('shop');
+                    App.showToast("Покупка успешна!");
+                },
+                upgradePickaxe() {
+                    if(State.player.pickaxe_level >= 6) return App.showToast("Кирка максимального уровня!");
+                    if(State.player.diamonds < 3) return App.showToast("Не хватает 💎 Алмазов!");
+                    State.player.diamonds -= 3;
+                    State.player.pickaxe_level++;
+                    App.saveLocal();
+                    App.switchTab('shop');
+                    App.showToast("Кирка улучшена!");
+                }
+            },
+
+            // --- Вкладка: НАСТРОЙКИ ---
+            settings: {
+                render() {
+                    const isMob = State.settings.mobileLayout;
+                    return `
+                        <h2 class="tab-title">⚙️ Настройки</h2>
+                        <div class="card" style="max-width: 400px;">
+                            
+                            <div class="toggle-container">
+                                <div>
+                                    <b>📱 Мобильный интерфейс</b>
+                                    <p style="font-size:12px; color:var(--text-muted);">Переместить меню вниз</p>
+                                </div>
+                                <div class="toggle-switch ${isMob ? 'on' : ''}" onclick="App.toggleMobileLayout()"></div>
+                            </div>
+                            
+                            <div style="margin-top: 30px;">
+                                <b>⚠️ Опасная зона</b>
+                                <button class="action-btn" style="background:var(--danger); border-color:var(--danger);" onclick="Modules.settings.reset()">Сбросить прогресс Web App</button>
+                            </div>
+                        </div>
+                    `;
+                },
+                reset() {
+                    if(confirm("Удалить все локальные сохранения? Это не удалит баланс в боте, но сбросит текущую сессию.")) {
+                        localStorage.removeItem('scrapAppState');
+                        location.reload();
+                    }
+                }
+            },
+
+            // --- Вкладка: АЛХИМИЯ (Старый код, вставленный как модуль) ---
+            alchemy: {
+                render() {
+                    return `
+                        <h2 class="tab-title">🧪 Алхимия</h2>
+                        <p style="color:var(--text-muted); font-size:14px; margin-bottom:15px;">Тот самый функционал, который мы делали ранее.</p>
+                        <div class="card" style="text-align:center; padding: 40px; border: 2px dashed var(--mana);">
+                            <h3>Котел находится в разработке интеграции...</h3>
+                            <p>В этой вкладке будет полный перенос прошлого кода алхимии, работающий с общим инвентарем.</p>
+                            <button class="action-btn" onclick="App.showToast('Псс... мана добавлена! (+50)'); State.player.mana += 50; App.saveLocal();">Сварить тестовое зелье</button>
+                        </div>
+                    `;
+                }
+            }
+        };
+
+        // Запуск
+        window.onload = () => App.init();
+
     </script>
 </body>
 </html>
