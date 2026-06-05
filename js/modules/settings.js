@@ -4,7 +4,8 @@ const SettingsModule = {
         
         return `
             <h2 class="tab-title">⚙️ Настройки</h2>
-            <div class="card" style="max-width: 400px;">
+            
+            <div class="card" style="max-width: 400px; margin-bottom: 20px;">
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0;">
                     <div>
                         <b>📱 Мобильный интерфейс</b>
@@ -17,20 +18,27 @@ const SettingsModule = {
                     </div>
                 </div>
             </div>
+
+            <div class="card" style="max-width: 400px; border-color: var(--danger);">
+                <h3 style="color: var(--danger); margin-bottom: 10px;">⚠️ Инструменты разработчика</h3>
+                <p style="font-size:12px; color:var(--text-muted); margin-bottom:15px;">Если выкатил обнову, а игра показывает старую версию — жми сюда.</p>
+                <button class="action-btn" style="background:var(--danger); border-color:var(--danger);" onclick="SettingsModule.hardReload()">🗑 Очистить кэш и Обновить</button>
+            </div>
         `;
     },
 
     toggleMobile() {
-        // Меняем состояние
         State.settings.mobileLayout = !State.settings.mobileLayout;
-        
-        // Сохраняем в локальную память браузера (кэш), а не на сервер бота
         localStorage.setItem('scrapAppSettings', JSON.stringify(State.settings));
-        
-        // Применяем изменения к дизайну
         App.applyLayout();
-        
-        // Перерисовываем саму вкладку настроек, чтобы тумблер сдвинулся
         App.switchTab('settings');
+    },
+
+    hardReload() {
+        if(confirm("Очистить кэш и принудительно обновить страницу?")) {
+            localStorage.clear();
+            // Магия обхода кэша: добавляем случайное число к ссылке
+            window.location.href = window.location.pathname + "?v=" + new Date().getTime();
+        }
     }
 };

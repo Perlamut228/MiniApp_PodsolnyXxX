@@ -79,10 +79,17 @@ const App = {
         API.save(); 
     },
 
-    updateUI() {
+   updateUI() {
         if (!isGameReady) return;
+        // Обновляем ПК-сайдбар
         document.getElementById('ui-sun').innerText = Math.floor(State.player.balance);
         document.getElementById('ui-dia').innerText = State.player.diamonds;
+        
+        // Обновляем мобильную шапку
+        const mobSun = document.getElementById('mob-sun');
+        const mobDia = document.getElementById('mob-dia');
+        if (mobSun) mobSun.innerText = Math.floor(State.player.balance);
+        if (mobDia) mobDia.innerText = State.player.diamonds;
     },
 
     switchTab(tabName) {
