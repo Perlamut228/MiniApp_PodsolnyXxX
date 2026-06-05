@@ -24,6 +24,8 @@ const State = {
         // --- МЕХАНИКИ МИНИ-ИГРЫ ---
         planted_seeds: 0,
         field_limit: 5,
+        storage_level: 1,   // 🗄 Уровень склада (ДОБАВЛЕНО)
+        storage_limit: 100, // 🗄 Вместимость склада (ДОБАВЛЕНО)
         pickaxe_level: 1,
         mine_start: null,
         mana: 0,
