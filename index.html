@@ -8,42 +8,22 @@
     <style>
         /* ================= ТЕМА И ЦВЕТА ================= */
         :root {
-            --bg-dark: #0f0f13;
-            --bg-panel: #1c1c24;
-            --bg-card: #252530;
-            --text-main: #ffffff;
-            --text-muted: #8b8b99;
-            --accent: #ff9800; /* Цвет подсолнуха */
-            --accent-hover: #e68900;
-            --mana: #9d4edd;
-            --dia: #00e5ff;
-            --border: #333344;
-            --danger: #ff4757;
-            --success: #2ed573;
+            --bg-dark: #0f0f13; --bg-panel: #1c1c24; --bg-card: #252530;
+            --text-main: #ffffff; --text-muted: #8b8b99;
+            --accent: #ff9800; --accent-hover: #e68900;
+            --mana: #9d4edd; --dia: #00e5ff;
+            --border: #333344; --danger: #ff4757; --success: #2ed573;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, sans-serif; }
         body { background-color: var(--bg-dark); color: var(--text-main); overflow: hidden; user-select: none; }
 
-        /* ================= КАРКАС ПРИЛОЖЕНИЯ ================= */
         #app { display: flex; height: 100vh; width: 100vw; transition: all 0.3s ease; }
-        
-        #sidebar {
-            width: 260px; background-color: var(--bg-panel); border-right: 1px solid var(--border);
-            display: flex; flex-direction: column; z-index: 100;
-        }
-        
-        #content-area {
-            flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative;
-        }
+        #sidebar { width: 260px; background-color: var(--bg-panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 100; }
+        #content-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        #topbar-mobile { display: none; }
+        #main-content { flex: 1; overflow-y: auto; padding: 20px; }
 
-        #topbar-mobile { display: none; } /* Виден только на мобилках */
-
-        #main-content {
-            flex: 1; overflow-y: auto; padding: 20px;
-        }
-
-        /* ================= ПРОФИЛЬ И РЕСУРСЫ (САЙДБАР) ================= */
         .profile-box { padding: 20px; border-bottom: 1px solid var(--border); text-align: center; }
         .avatar { width: 64px; height: 64px; border-radius: 50%; background: var(--border); margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
         .username { font-weight: bold; font-size: 16px; margin-bottom: 5px; }
@@ -52,84 +32,54 @@
         .resources-box { padding: 15px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
         .res-item { display: flex; justify-content: space-between; align-items: center; font-weight: bold; background: var(--bg-card); padding: 8px 12px; border-radius: 8px; }
         .res-item span:last-child { font-family: monospace; font-size: 15px; }
-        .res-sun { color: var(--accent); }
-        .res-dia { color: var(--dia); }
-        .res-mana { color: var(--mana); }
+        .res-sun { color: var(--accent); } .res-dia { color: var(--dia); } .res-mana { color: var(--mana); }
 
-        /* ================= МЕНЮ НАВИГАЦИИ ================= */
         .nav-menu { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 5px; }
-        .nav-btn {
-            background: transparent; border: none; color: var(--text-main); text-align: left;
-            padding: 12px 15px; border-radius: 8px; cursor: pointer; font-size: 15px;
-            display: flex; align-items: center; gap: 10px; transition: background 0.2s;
-        }
+        .nav-btn { background: transparent; border: none; color: var(--text-main); text-align: left; padding: 12px 15px; border-radius: 8px; cursor: pointer; font-size: 15px; display: flex; align-items: center; gap: 10px; transition: background 0.2s; }
         .nav-btn:hover { background: rgba(255, 255, 255, 0.05); }
         .nav-btn.active { background: var(--accent); color: #000; font-weight: bold; }
         
-        /* ================= МОБИЛЬНЫЙ РЕЖИМ (Или узкий экран) ================= */
         body.mobile-mode #app { flex-direction: column; }
-        
-        body.mobile-mode #sidebar {
-            width: 100%; height: 70px; border-right: none; border-top: 1px solid var(--border);
-            flex-direction: row; order: 3; /* Вниз */
-        }
-        
-        body.mobile-mode .profile-box, 
-        body.mobile-mode .resources-box { display: none; } /* Прячем в нижнем баре */
-        
-        body.mobile-mode .nav-menu {
-            flex-direction: row; justify-content: space-around; align-items: center; padding: 5px; width: 100%;
-            overflow-x: auto;
-        }
-        
-        body.mobile-mode .nav-btn {
-            flex-direction: column; padding: 8px 5px; font-size: 10px; gap: 4px; border-radius: 12px;
-            min-width: 60px; text-align: center; justify-content: center;
-        }
-        
-        body.mobile-mode #topbar-mobile {
-            display: flex; order: 1; background: var(--bg-panel); border-bottom: 1px solid var(--border);
-            padding: 10px 15px; justify-content: space-between; align-items: center; z-index: 10;
-        }
-        
+        body.mobile-mode #sidebar { width: 100%; height: 70px; border-right: none; border-top: 1px solid var(--border); flex-direction: row; order: 3; }
+        body.mobile-mode .profile-box, body.mobile-mode .resources-box { display: none; }
+        body.mobile-mode .nav-menu { flex-direction: row; justify-content: space-around; align-items: center; padding: 5px; width: 100%; overflow-x: auto; }
+        body.mobile-mode .nav-btn { flex-direction: column; padding: 8px 5px; font-size: 10px; gap: 4px; border-radius: 12px; min-width: 60px; text-align: center; justify-content: center; }
+        body.mobile-mode #topbar-mobile { display: flex; order: 1; background: var(--bg-panel); border-bottom: 1px solid var(--border); padding: 10px 15px; justify-content: space-between; align-items: center; z-index: 10; }
         body.mobile-mode #content-area { order: 2; }
         body.mobile-mode #main-content { padding: 10px; }
 
-        /* ================= UI ЭЛЕМЕНТЫ ВНУТРИ ВЛАДОК ================= */
         h2.tab-title { margin-bottom: 15px; border-bottom: 2px solid var(--accent); padding-bottom: 10px; display: inline-block; }
-        
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
         .card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 15px; }
-        
-        button.action-btn {
-            background: var(--bg-card); color: white; border: 1px solid var(--border);
-            padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold;
-            transition: 0.2s; margin-top: 10px;
-        }
+        button.action-btn { background: var(--bg-card); color: white; border: 1px solid var(--border); padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; transition: 0.2s; margin-top: 10px; }
         button.action-btn:hover:not(:disabled) { background: var(--accent); color: #000; }
         button.action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        
         .progress-bar { width: 100%; height: 10px; background: var(--bg-dark); border-radius: 5px; margin-top: 10px; overflow: hidden; }
         .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 1s linear; }
 
-        /* Всплывающие уведомления */
         #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; pointer-events: none; }
         .toast { background: rgba(0,0,0,0.9); border: 1px solid var(--accent); color: white; padding: 12px 24px; border-radius: 30px; margin-bottom: 10px; font-size: 14px; opacity: 0; transition: 0.3s; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
 
-        /* Переключатель */
-        .toggle-container { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+        .toggle-container { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: none; }
         .toggle-switch { position: relative; width: 50px; height: 24px; background: var(--bg-dark); border-radius: 12px; cursor: pointer; border: 1px solid var(--border); }
         .toggle-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; background: var(--text-muted); border-radius: 50%; transition: 0.3s; }
         .toggle-switch.on { background: var(--accent); border-color: var(--accent); }
         .toggle-switch.on::after { left: 28px; background: #000; }
-
+        
+        #loading-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--bg-dark); display: flex; justify-content: center; align-items: center; z-index: 9999; flex-direction: column; transition: opacity 0.5s; }
+        .spinner { border: 4px solid var(--bg-panel); border-top: 4px solid var(--accent); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <h3 style="color: var(--accent);">Синхронизация с ботом...</h3>
+    </div>
+
     <div id="toast-container"></div>
 
     <div id="app">
-        <!-- БОКОВАЯ ПАНЕЛЬ (ПК) / НИЖНЯЯ ПАНЕЛЬ (Мобайл) -->
         <aside id="sidebar">
             <div class="profile-info profile-box">
                 <div class="avatar" id="ui-avatar">🤖</div>
@@ -138,9 +88,9 @@
             </div>
 
             <div class="resources-box">
-                <div class="res-item res-sun"><span>🌻 Баланс</span> <span id="ui-sun">0</span></div>
-                <div class="res-item res-dia"><span>💎 Алмазы</span> <span id="ui-dia">0</span></div>
-                <div class="res-item res-mana"><span>🔮 Мана</span> <span id="ui-mana">0</span></div>
+                <div class="res-item res-sun"><span>🌻 Баланс</span> <span id="ui-sun">...</span></div>
+                <div class="res-item res-dia"><span>💎 Алмазы</span> <span id="ui-dia">...</span></div>
+                <div class="res-item res-mana"><span>🔮 Мана</span> <span id="ui-mana">...</span></div>
             </div>
 
             <nav class="nav-menu">
@@ -152,19 +102,14 @@
             </nav>
         </aside>
 
-        <!-- ОСНОВНАЯ ЗОНА -->
         <div id="content-area">
-            <!-- ВЕРХНЯЯ ПАНЕЛЬ (Только для мобилок) -->
             <div id="topbar-mobile">
-                <div style="font-weight: bold; color: var(--accent);">🌻 <span id="mob-sun">0</span></div>
-                <div style="font-weight: bold; color: var(--dia);">💎 <span id="mob-dia">0</span></div>
-                <div style="font-weight: bold; color: var(--mana);">🔮 <span id="mob-mana">0</span></div>
+                <div style="font-weight: bold; color: var(--accent);">🌻 <span id="mob-sun">...</span></div>
+                <div style="font-weight: bold; color: var(--dia);">💎 <span id="mob-dia">...</span></div>
+                <div style="font-weight: bold; color: var(--mana);">🔮 <span id="mob-mana">...</span></div>
             </div>
 
-            <!-- ДИНАМИЧЕСКИЙ КОНТЕНТ -->
-            <main id="main-content">
-                <!-- Сюда JS рендерит HTML вкладки -->
-            </main>
+            <main id="main-content"></main>
         </div>
     </div>
 
@@ -173,55 +118,60 @@
         tg.ready();
         tg.expand();
 
-        // ================= ГЛОБАЛЬНОЕ СОСТОЯНИЕ ИГРЫ =================
+        // ТЕПЕРЬ ТУТ ВЕЗДЕ НУЛИ! Никаких стартовых подачек.
         const State = {
             settings: { mobileLayout: false },
             player: {
-                balance: 1000,   // 🌻 Стартовый бонус для тестов
-                diamonds: 5,     // 💎
-                seeds: 10,       // 🌱
-                super_seeds: 0,  // 🌱✨
-                
-                // Шахта
-                pickaxe_level: 1,
-                mine_start: null, 
-                
-                // Сад
-                planted_seeds: 0,
-                field_limit: 5,
-
-                // Алхимия (перенесено из прошлого кода)
-                mana: 0,
-                inventory: {},
-                discoveredRecipes: [],
-                autoCrafters: {}
+                balance: 0, diamonds: 0, seeds: 0, super_seeds: 0,
+                pickaxe_level: 1, mine_start: null, planted_seeds: 0, field_limit: 5,
+                mana: 0, inventory: {}, discoveredRecipes: [], autoCrafters: {}
             }
         };
 
         let needsServerSync = false;
+        let isGameReady = false;
 
-        // ================= ЯДРО ПРИЛОЖЕНИЯ =================
         const App = {
             currentTab: 'farm',
             
-            init() {
-                this.loadLocal();
-                this.applyLayout();
+            // СТРОГО АСИНХРОННЫЙ ЗАПУСК
+            async init() {
                 this.setupProfile();
+                
+                // 1. Сначала ждем ответа от сервера бота!
+                await this.loadFromServer();
+                
+                // 2. Только после ответа убираем экран загрузки
+                document.getElementById('loading-overlay').style.opacity = '0';
+                setTimeout(() => document.getElementById('loading-overlay').style.display = 'none', 500);
+
+                // 3. Рисуем реальные данные
+                isGameReady = true;
+                this.applyLayout();
                 this.switchTab('farm');
                 this.updateUI();
                 
-                // Игровой цикл
+                // 4. Запускаем игровые циклы
                 setInterval(() => this.gameLoop(), 1000);
-                // Цикл сохранения на сервер
                 setInterval(() => {
-                    if (needsServerSync) { this.saveToServer(); needsServerSync = false; }
+                    if (needsServerSync && isGameReady) { this.saveToServer(); needsServerSync = false; }
                 }, 5000);
             },
 
-            loadLocal() {
-                // Если мы открыли игру в Телеграме, запрашиваем базу бота
-                if (tg.initData) {
+            loadFromServer() {
+                return new Promise((resolve) => {
+                    // Загружаем настройки визуала локально
+                    const saved = localStorage.getItem('scrapAppSettings');
+                    if (saved) State.settings = JSON.parse(saved);
+
+                    // Если открыли не в телеграме (чисто для тестов дизайна)
+                    if (!tg.initData) {
+                        console.log("Нет связи с Telegram, запуск оффлайн-режима.");
+                        resolve();
+                        return;
+                    }
+
+                    // Обращение к твоей БД в боте
                     fetch("https://kriogenka.pythonanywhere.com/api/load", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -229,24 +179,26 @@
                     })
                     .then(res => res.json())
                     .then(data => {
-                        if (data.status === "success") {
+                        if (data.status === "success" && data.player) {
                             State.player = { ...State.player, ...data.player };
-                            this.updateUI();
-                            this.switchTab(this.currentTab); // Обновляем экран
+                            console.log("Успешно загружено с сервера!");
+                        } else {
+                            App.showToast("Ошибка сервера: " + (data.message || "Неизвестно"));
                         }
+                        resolve();
+                    })
+                    .catch(err => {
+                        console.error("Ошибка сети:", err);
+                        App.showToast("Сервер недоступен!");
+                        resolve();
                     });
-                }
-                
-                // Загружаем настройки темы (мобилка/ПК) из кэша телефона
-                const saved = localStorage.getItem('scrapAppState');
-                if (saved) {
-                    const parsed = JSON.parse(saved);
-                    State.settings = parsed.settings || State.settings;
-                }
+                });
             },
 
             saveLocal() {
-                localStorage.setItem('scrapAppState', JSON.stringify(State));
+                // Теперь мы НЕ сохраняем ресурсы в localStorage, чтобы не было конфликтов с сервером!
+                // В localStorage храним только визуал (мобильный вид или ПК)
+                localStorage.setItem('scrapAppSettings', JSON.stringify(State.settings));
                 needsServerSync = true;
                 this.updateUI();
             },
@@ -258,7 +210,7 @@
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         tg_data: tg.initData,
-                        app_data: State.player // Отправляем ВСЕ данные
+                        app_data: State.player
                     })
                 }).catch(e => console.log("Синхронизация в фоне"));
             },
@@ -275,6 +227,7 @@
             },
 
             updateUI() {
+                if (!isGameReady) return;
                 const p = State.player;
                 document.getElementById('ui-sun').innerText = Math.floor(p.balance);
                 document.getElementById('ui-dia').innerText = p.diamonds;
@@ -305,7 +258,7 @@
                 State.settings.mobileLayout = !State.settings.mobileLayout;
                 this.applyLayout();
                 this.saveLocal();
-                this.switchTab('settings'); // Перерисовка кнопки
+                this.switchTab('settings');
             },
 
             showToast(msg) {
@@ -317,32 +270,27 @@
             },
 
             gameLoop() {
+                if (!isGameReady) return;
                 let changed = false;
                 
-                // Логика роста сада
                 if (State.player.planted_seeds > 0) {
-                    // +0.05 🌻 за семечко в секунду (как в боте, но плавно)
                     State.player.balance += State.player.planted_seeds * 0.05;
                     changed = true;
                 }
 
                 if (changed) this.saveLocal();
                 
-                // Если мы на вкладке Сада, обновляем цифры без мерцания
                 if (this.currentTab === 'farm') {
                     const earnEl = document.getElementById('farm-earning');
                     if(earnEl) earnEl.innerText = (State.player.planted_seeds * 0.05).toFixed(2);
                 }
-                // Если мы на вкладке Шахты, обновляем таймер
                 if (this.currentTab === 'mine') {
                     Modules.mine.updateTimer();
                 }
             }
         };
 
-        // ================= ИГРОВЫЕ МОДУЛИ (ВЛАДКИ) =================
         const Modules = {
-            // --- Вкладка: САД ---
             farm: {
                 render() {
                     const p = State.player;
@@ -369,23 +317,16 @@
                 plant() {
                     if (State.player.planted_seeds >= State.player.field_limit) return App.showToast("Поле заполнено!");
                     if (State.player.seeds < 1) return App.showToast("Нет семян! Купите в магазине.");
-                    
-                    State.player.seeds--;
-                    State.player.planted_seeds++;
-                    App.showToast("Посажено!");
-                    App.saveLocal();
-                    App.switchTab('farm'); // Перерендер
+                    State.player.seeds--; State.player.planted_seeds++;
+                    App.showToast("Посажено!"); App.saveLocal(); App.switchTab('farm');
                 },
                 harvest() {
                     if (State.player.planted_seeds === 0) return App.showToast("В саду пусто!");
-                    App.showToast("Урожай собран, счетчик обнулен!");
-                    State.player.planted_seeds = 0;
-                    App.saveLocal();
-                    App.switchTab('farm');
+                    App.showToast("Урожай собран!");
+                    State.player.planted_seeds = 0; App.saveLocal(); App.switchTab('farm');
                 }
             },
 
-            // --- Вкладка: ШАХТА ---
             mine: {
                 render() {
                     const p = State.player;
@@ -409,7 +350,6 @@
                         <div class="grid">
                             <div class="card">
                                 <h3>Ваша кирка: ${pName} (Ур. ${p.pickaxe_level})</h3>
-                                <p style="color: var(--text-muted); font-size:14px; margin-top:5px;">Чем лучше кирка, тем быстрее добываются алмазы.</p>
                                 <hr style="border:0; border-top:1px solid #333; margin:15px 0;">
                                 ${actionHtml}
                             </div>
@@ -423,9 +363,7 @@
                 getHoursNeeded() { return Math.max(2, 10 - (State.player.pickaxe_level * 2)); },
                 sendWorker() {
                     State.player.mine_start = Date.now();
-                    App.saveLocal();
-                    App.switchTab('mine');
-                    App.showToast("Рабочий ушел в шахту!");
+                    App.saveLocal(); App.switchTab('mine'); App.showToast("Рабочий ушел в шахту!");
                 },
                 updateTimer() {
                     if(!State.player.mine_start) return;
@@ -435,54 +373,33 @@
                     if(!elTimer) return;
 
                     const now = Date.now();
-                    const neededMs = this.getHoursNeeded() * 60 * 1000; // Для теста в Web App: часы заменены на минуты (10 мин вместо 10 часов)
+                    const neededMs = this.getHoursNeeded() * 60 * 1000; // Минуты для теста
                     const passedMs = now - State.player.mine_start;
                     
                     if (passedMs >= neededMs) {
-                        elTimer.innerText = "Готово!";
-                        elProg.style.width = "100%";
+                        elTimer.innerText = "Готово!"; elProg.style.width = "100%";
                         if(btn) { btn.disabled = false; btn.style.background = "var(--success)"; }
                     } else {
                         const left = neededMs - passedMs;
-                        const m = Math.floor(left / 60000);
-                        const s = Math.floor((left % 60000) / 1000);
-                        elTimer.innerText = `Осталось: ${m}м ${s}с`; // В продакшене перевести обратно в часы
+                        const m = Math.floor(left / 60000); const s = Math.floor((left % 60000) / 1000);
+                        elTimer.innerText = `Осталось: ${m}м ${s}с`;
                         elProg.style.width = (passedMs / neededMs * 100) + "%";
                     }
                 },
                 collect() {
-                    State.player.mine_start = null;
-                    State.player.diamonds += 1;
-                    App.saveLocal();
-                    App.switchTab('mine');
-                    App.showToast("Добыт 1 💎 Алмаз!");
+                    State.player.mine_start = null; State.player.diamonds += 1;
+                    App.saveLocal(); App.switchTab('mine'); App.showToast("Добыт 1 💎 Алмаз!");
                 }
             },
 
-            // --- Вкладка: МАГАЗИН ---
             shop: {
                 render() {
                     return `
                         <h2 class="tab-title">🛒 Магазин</h2>
                         <div class="grid">
-                            <div class="card">
-                                <div style="font-size:32px; margin-bottom:10px;">🌱</div>
-                                <h3>1 Семечко</h3>
-                                <p style="color:var(--text-muted); font-size:12px; margin-bottom:10px;">Для посадки в саду</p>
-                                <button class="action-btn" onclick="Modules.shop.buy('seed', 100)">Купить (100 🌻)</button>
-                            </div>
-                            <div class="card">
-                                <div style="font-size:32px; margin-bottom:10px;">🌱✨</div>
-                                <h3>1 Супер-Семечко</h3>
-                                <p style="color:var(--text-muted); font-size:12px; margin-bottom:10px;">Элитный ресурс</p>
-                                <button class="action-btn" onclick="Modules.shop.buy('super', 500)">Купить (500 🌻)</button>
-                            </div>
-                            <div class="card">
-                                <div style="font-size:32px; margin-bottom:10px;">⛏</div>
-                                <h3>Улучшить Кирку</h3>
-                                <p style="color:var(--text-muted); font-size:12px; margin-bottom:10px;">Ускоряет добычу 💎</p>
-                                <button class="action-btn" onclick="Modules.shop.upgradePickaxe()">Улучшить (3 💎)</button>
-                            </div>
+                            <div class="card"><div style="font-size:32px; margin-bottom:10px;">🌱</div><h3>1 Семечко</h3><button class="action-btn" onclick="Modules.shop.buy('seed', 100)">Купить (100 🌻)</button></div>
+                            <div class="card"><div style="font-size:32px; margin-bottom:10px;">🌱✨</div><h3>1 Супер-Семечко</h3><button class="action-btn" onclick="Modules.shop.buy('super', 500)">Купить (500 🌻)</button></div>
+                            <div class="card"><div style="font-size:32px; margin-bottom:10px;">⛏</div><h3>Улучшить Кирку</h3><button class="action-btn" onclick="Modules.shop.upgradePickaxe()">Улучшить (3 💎)</button></div>
                         </div>
                     `;
                 },
@@ -491,69 +408,44 @@
                     State.player.balance -= cost;
                     if(type==='seed') State.player.seeds++;
                     if(type==='super') State.player.super_seeds++;
-                    App.saveLocal();
-                    App.switchTab('shop');
-                    App.showToast("Покупка успешна!");
+                    App.saveLocal(); App.switchTab('shop'); App.showToast("Покупка успешна!");
                 },
                 upgradePickaxe() {
-                    if(State.player.pickaxe_level >= 6) return App.showToast("Кирка максимального уровня!");
-                    if(State.player.diamonds < 3) return App.showToast("Не хватает 💎 Алмазов!");
-                    State.player.diamonds -= 3;
-                    State.player.pickaxe_level++;
-                    App.saveLocal();
-                    App.switchTab('shop');
-                    App.showToast("Кирка улучшена!");
+                    if(State.player.pickaxe_level >= 6) return App.showToast("Кирка максимальная!");
+                    if(State.player.diamonds < 3) return App.showToast("Не хватает 💎!");
+                    State.player.diamonds -= 3; State.player.pickaxe_level++;
+                    App.saveLocal(); App.switchTab('shop'); App.showToast("Кирка улучшена!");
                 }
             },
 
-            // --- Вкладка: НАСТРОЙКИ ---
             settings: {
                 render() {
                     const isMob = State.settings.mobileLayout;
                     return `
                         <h2 class="tab-title">⚙️ Настройки</h2>
                         <div class="card" style="max-width: 400px;">
-                            
-                            <div class="toggle-container">
-                                <div>
-                                    <b>📱 Мобильный интерфейс</b>
-                                    <p style="font-size:12px; color:var(--text-muted);">Переместить меню вниз</p>
-                                </div>
+                            <div class="toggle-container" style="border:none;">
+                                <div><b>📱 Мобильный интерфейс</b><p style="font-size:12px; color:var(--text-muted);">Переместить меню вниз</p></div>
                                 <div class="toggle-switch ${isMob ? 'on' : ''}" onclick="App.toggleMobileLayout()"></div>
-                            </div>
-                            
-                            <div style="margin-top: 30px;">
-                                <b>⚠️ Опасная зона</b>
-                                <button class="action-btn" style="background:var(--danger); border-color:var(--danger);" onclick="Modules.settings.reset()">Сбросить прогресс Web App</button>
                             </div>
                         </div>
                     `;
-                },
-                reset() {
-                    if(confirm("Удалить все локальные сохранения? Это не удалит баланс в боте, но сбросит текущую сессию.")) {
-                        localStorage.removeItem('scrapAppState');
-                        location.reload();
-                    }
                 }
             },
 
-            // --- Вкладка: АЛХИМИЯ (Старый код, вставленный как модуль) ---
             alchemy: {
                 render() {
                     return `
                         <h2 class="tab-title">🧪 Алхимия</h2>
-                        <p style="color:var(--text-muted); font-size:14px; margin-bottom:15px;">Тот самый функционал, который мы делали ранее.</p>
                         <div class="card" style="text-align:center; padding: 40px; border: 2px dashed var(--mana);">
-                            <h3>Котел находится в разработке интеграции...</h3>
-                            <p>В этой вкладке будет полный перенос прошлого кода алхимии, работающий с общим инвентарем.</p>
-                            <button class="action-btn" onclick="App.showToast('Псс... мана добавлена! (+50)'); State.player.mana += 50; App.saveLocal();">Сварить тестовое зелье</button>
+                            <h3>Котел в разработке...</h3>
+                            <button class="action-btn" onclick="State.player.mana += 50; App.saveLocal(); App.updateUI(); App.showToast('+50 Маны!');">Добавить ману для теста</button>
                         </div>
                     `;
                 }
             }
         };
 
-        // Запуск
         window.onload = () => App.init();
 
     </script>
