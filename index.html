@@ -220,11 +220,28 @@
             },
 
             loadLocal() {
+                // Если мы открыли игру в Телеграме, запрашиваем базу бота
+                if (tg.initData) {
+                    fetch("https://kriogenka.pythonanywhere.com/api/load", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ tg_data: tg.initData })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === "success") {
+                            State.player = { ...State.player, ...data.player };
+                            this.updateUI();
+                            this.switchTab(this.currentTab); // Обновляем экран
+                        }
+                    });
+                }
+                
+                // Загружаем настройки темы (мобилка/ПК) из кэша телефона
                 const saved = localStorage.getItem('scrapAppState');
                 if (saved) {
                     const parsed = JSON.parse(saved);
                     State.settings = parsed.settings || State.settings;
-                    State.player = { ...State.player, ...parsed.player };
                 }
             },
 
